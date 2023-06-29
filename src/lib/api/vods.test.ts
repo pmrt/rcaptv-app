@@ -14,7 +14,7 @@ describe("api:vods", () => {
     } catch (e) {
       expect(e).toBeInstanceOf(ErrFetch);
       expect((e as ErrFetch).errors).toHaveLength(1);
-      expect((e as ErrFetch).errors[0]).toBe("Missing username");
+      expect((e as ErrFetch).errors[0]).toBe("Missing username or vid");
     }
   });
 });
