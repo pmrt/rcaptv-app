@@ -1,7 +1,7 @@
 import { fetchOrFail, getURL } from "@/lib/api/api";
 import { ErrFetch } from "@/lib/errors";
 
-type VOD = {
+export type VOD = {
   id: string;
   user_id: string;
   stream_id: string;
