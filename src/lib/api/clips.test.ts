@@ -1,4 +1,4 @@
-import { getClipsByVod, __test__ as t } from "./clips";
+import { clipsByVod, __test__ as t } from "./clips";
 
 describe("getClips:helpers", () => {
   test("addTime", () => {
@@ -9,7 +9,7 @@ describe("getClips:helpers", () => {
 
 describe("api", () => {
   test("getClips", async () => {
-    const clips = await getClipsByVod({
+    const clips = await clipsByVod({
       id: "1856303227",
       user_id: "152633332",
       stream_id: "46977536044",
@@ -29,7 +29,7 @@ describe("api", () => {
     const clipsJson = await import("@test/fixtures/clips_vod_1856303227.json");
     const wantIds = clipsJson.default.map((c) => c.id);
 
-    // We will match only a give ids from the ss since clips are very unstable
+    // We will match only a few ids since clips are very unstable
     let matches = 0;
     clips.data.clips.forEach((clip) => {
       if (wantIds.includes(clip.id)) {

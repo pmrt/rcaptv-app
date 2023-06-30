@@ -7,12 +7,12 @@ export default function ErrorPage() {
     return (
       <div className="fetch-error-list">
         <ul>
-          {error.errors.map((msg) => (
-            <li>{msg}</li>
+          {error.errors.map((msg, i) => (
+            <li key={i}>{msg}</li>
           ))}
         </ul>
       </div>
     );
   }
-  return <div>{error.string()}</div>;
+  return <div>{error.message}</div>;
 }

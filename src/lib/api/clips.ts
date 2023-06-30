@@ -1,5 +1,4 @@
 import { VOD } from "@/lib/api/vods";
-import { ErrFetch } from "@/lib/errors";
 import { fetchOrFail, getURL } from "./api";
 
 export type Clip = {
@@ -22,22 +21,19 @@ type ClipResponse = {
   };
   errors: string[];
 };
-export const getClipsByVod = async (vod: VOD): Promise<ClipResponse> => {
-  const resp = await fetchOrFail(
-    getURL("/clips", {
-      bid: vod.user_id,
-      started_at: vod.created_at,
-      ended_at: addTime(
-        new Date(vod.created_at),
-        vod.duration_seconds
-      ).toISOString(),
-    })
-  );
-  if (!resp.ok) {
-    throw await new ErrFetch("").asyncResp(resp);
-  }
-  return resp.json();
-};
+export const clipsByVod = async (vod: VOD): Promise<ClipResponse> =>
+  await (
+    await fetchOrFail(
+      getURL("/clips", {
+        bid: vod.user_id,
+        started_at: vod.created_at,
+        ended_at: addTime(
+          new Date(vod.created_at),
+          vod.duration_seconds
+        ).toISOString(),
+      })
+    )
+  ).json();
 
 const addTime = (t: Date, sec: number) => new Date(t.getTime() + sec * 1000);
 

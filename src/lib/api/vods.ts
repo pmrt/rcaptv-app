@@ -1,5 +1,4 @@
 import { fetchOrFail, getURL } from "@/lib/api/api";
-import { ErrFetch } from "@/lib/errors";
 
 export type VOD = {
   id: string;
@@ -13,18 +12,19 @@ export type VOD = {
   view_count: number;
   duration_seconds: number;
 };
-type VODResponse = {
+export type VODResponse = {
   data: {
     vods: VOD[];
   };
   errors: string[];
 };
-export const getVodsByStreamer = async (
+export const lastVodByStreamer = async (
   username: string
-): Promise<VODResponse> => {
-  const resp = await fetchOrFail(getURL("/vods", { username }));
-  if (!resp.ok) {
-    throw await new ErrFetch("").asyncResp(resp);
-  }
-  return resp.json();
-};
+): Promise<VODResponse> =>
+  await (await fetchOrFail(getURL("/vods", { username }))).json();
+
+export const vodById = async (vid: string): Promise<VODResponse> =>
+  await (await fetchOrFail(getURL("/vods", { vid }))).json();
+
+export const prevVod = async (vid: string): Promise<VODResponse> =>
+  await (await fetchOrFail(getURL("/vods", { after: vid }))).json();

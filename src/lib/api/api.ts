@@ -15,11 +15,16 @@ export const getURL = (endpoint: string, params?: URLParams) => {
 };
 
 export const fetchOrFail = async (url: string) => {
+  let resp;
   try {
-    return await fetch(url);
+    resp = await fetch(url);
   } catch (e) {
     throw new ErrFetch(
       "Error while fetching, network failure or incorrect request"
     );
   }
+  if (!resp.ok) {
+    throw await new ErrFetch("").asyncResp(resp);
+  }
+  return resp;
 };

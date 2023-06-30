@@ -24,6 +24,10 @@ export class ErrResponse extends RcapError {
   name = "ErrResponse";
 }
 
+export class ErrPageError extends RcapError {
+  name = "ErrPageError";
+}
+
 type RcapResponse = {
   data: unknown;
   errors: string[];
