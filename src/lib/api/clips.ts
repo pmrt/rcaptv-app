@@ -15,6 +15,11 @@ export type Clip = {
   view_count: number;
   vod_offset: number | null;
 };
+
+export type ClipWithNonNullableVodOffset = Omit<Clip, "vod_offset"> & {
+  vod_offset: number;
+};
+
 type ClipResponse = {
   data: {
     clips: Clip[];

@@ -1,9 +1,10 @@
-import { clipsByVod, type Clip } from "@/lib/api/clips";
+import { ClipWithNonNullableVodOffset, clipsByVod } from "@/lib/api/clips";
 import { type VOD, type VODResponse } from "@/lib/api/vods";
 import { ErrPageError } from "@/lib/errors";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import TimelineBar from "./TimelineBar";
 import VodsDisabled from "./VodsDisabled";
 import { vodByVidQuery } from "./loader";
 
@@ -55,10 +56,12 @@ export default function Timeline() {
     return <h1>Error clips</h1>;
   }
 
-  let clips: Clip[] = [];
+  let clips: ClipWithNonNullableVodOffset[] = [];
   if (clipsOk) {
     const all = clipsResult.data.data.clips;
-    clips = all.filter((c) => c.video_id === vid);
+    clips = all.filter(
+      (c) => c.vod_offset !== null && c.video_id === vid
+    ) as ClipWithNonNullableVodOffset[];
     if (clips.length === 0) {
       return <VodsDisabled />;
     }
@@ -72,11 +75,7 @@ export default function Timeline() {
     <>
       <h1>Timeline</h1>
       {vodsOk ? <h2>{vod.title}</h2> : <h2>Loading...</h2>}
-      <ul>
-        {clips.map((c) => (
-          <li key={c.id}>{c.title}</li>
-        ))}
-      </ul>
+      <TimelineBar clips={clips} vod={vod} />
     </>
   );
 }
