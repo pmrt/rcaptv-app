@@ -1,6 +1,6 @@
 import { type VOD } from "@/lib/api/vods";
 
-import { range } from "@/lib/utils";
+import { noop, range } from "@/lib/utils";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import { ClipWithNonNullableVodOffset } from "@/lib/api/clips";
@@ -11,11 +11,16 @@ import "./TimelineBar.scss";
 type TimelineBarProps = {
   clips: ClipWithNonNullableVodOffset[];
   vod: VOD;
+  nearThreshold: number;
+  onTimeMarkChange?: (seconds: number, duration: string) => void;
 };
 
-const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
-  // console.log(clips.sort((a, b) => a.vod_offset - b.vod_offset));
-  const [sel, setSel] = useState<ClipWithNonNullableVodOffset | null>(null);
+const TimelineBar = ({
+  clips,
+  vod,
+  onTimeMarkChange = noop,
+  nearThreshold,
+}: TimelineBarProps) => {
   const colorInterp = colorize(
     // clips is ordered from high view count to low, so we invert the colors:
     //high
@@ -25,22 +30,43 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
     clips.map((c) => c.view_count)
   );
 
+  // TODO - usePxInterpolation and useVODCursor should be in the same hook
   const pxInterpObj = usePxInterpolation<HTMLDivElement>(
     vod.duration_seconds,
-    0
+    0,
+    -4
   );
   const { ref: outerRef, toWidthPx } = pxInterpObj;
-  const { ref: cursorRef, timeMark } = useVODCursor(pxInterpObj);
+  const {
+    ref: cursorRef,
+    refMarker: cursorMarkerRef,
+    timeMark,
+  } = useVODCursor(pxInterpObj);
 
+  useEffect(() => {
+    if (cursorRef.current) {
+      const thresholdArea = (vod.duration_seconds * nearThreshold) / 100;
+      cursorRef.current.style.setProperty(
+        "--threshold-width",
+        `${toWidthPx(thresholdArea)}px`
+      );
+    }
+  }, [cursorRef, nearThreshold, toWidthPx, vod.duration_seconds]);
+
+  useEffect(() => {
+    onTimeMarkChange(timeMark.seconds, timeMark.duration);
+  }, [timeMark.duration, timeMark.seconds, onTimeMarkChange]);
   return (
     <aside className="timeline-bar">
-      <span>{timeMark.duration}</span>
       <div className="timeline-box">
+        <span className="cursor-marker" ref={cursorMarkerRef} />
         <div className="outer" ref={outerRef}>
-          <div className="cursor" ref={cursorRef}></div>
+          <div className="cursor" ref={cursorRef}>
+            <span className="cursor-threshold-area-left" />
+            <span className="cursor-threshold-area-right" />
+          </div>
           {clips.map((clip, i) => (
             <article
-              onClick={() => setSel(clip)}
               key={clip.id}
               className="clip-bar"
               style={{
@@ -52,28 +78,19 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
           ))}
         </div>
       </div>
-      <div>
-        {sel ? (
-          <iframe
-            src={`https://clips.twitch.tv/embed?clip=${sel.id}&parent=localhost`}
-            height="360"
-            width="640"
-            allowFullScreen
-          ></iframe>
-        ) : (
-          ""
-        )}
-      </div>
     </aside>
   );
 };
 
+export type TimeMark = {
+  seconds: number;
+  duration: string;
+};
+
 type VODCursorObj<T extends HTMLElement> = {
   ref: RefObject<T>;
-  timeMark: {
-    seconds: number;
-    duration: string;
-  };
+  refMarker: RefObject<T>;
+  timeMark: TimeMark;
 };
 // VOD Cursor, requires usePxInterpolation hook.
 function useVODCursor<T extends HTMLElement>(
@@ -86,42 +103,52 @@ function useVODCursor<T extends HTMLElement>(
     dimensions: parentDims,
   } = pxInterpObj;
   const cursorRef = useRef<T>(null);
+  const cursorMarkerRef = useRef<T>(null);
   const [timeMark, setTimeMark] = useState(0);
 
   // update offset when hook is re-run
   if (cursorRef.current) {
     cursorRef.current.style.left = `${toWidthPx(timeMark)}px`;
   }
+  if (cursorMarkerRef.current) {
+    cursorMarkerRef.current.style.left = `${toWidthPx(timeMark)}px`;
+  }
 
   useEffect(() => {
     const el = cursorRef.current;
+    const elMarker = cursorMarkerRef.current;
     const parent = outerRef.current;
     const width = el?.getBoundingClientRect().width ?? 0;
     let isDragging = false;
 
     const cursorUpdate = (evt: MouseEvent) => {
       const { offsetX, target, type, clientX } = evt;
-      if (!el) return;
+      if (!el || !elMarker) return;
 
       switch (type) {
         case "mousedown":
           isDragging = true;
-          el.style.transform = `scale(1.2)`;
+          // el.style.transform = `scale(1.2)`;
           if (target !== parent) return;
           el.style.left = `${Math.round(offsetX - width / 2)}px`;
+          elMarker.style.left = `${Math.round(offsetX - width / 2)}px`;
           break;
         case "mousemove":
           if (isDragging) {
             const px = Math.max(
-              Math.min(Math.round(clientX - parentDims.left), parentDims.width),
+              Math.min(
+                Math.round(clientX - parentDims.left),
+                parentDims.width - width
+              ),
               0
             );
             el.style.left = `${px}px`;
+            elMarker.style.left = `${px}px`;
           }
           break;
         case "mouseup":
           isDragging = false;
-          el.style.transform = `scale(1)`;
+          // el.style.transform = `scale(1)`;
           setTimeMark(toTimeMark(parseInt(el.style.left, 10)));
           break;
       }
@@ -142,6 +169,7 @@ function useVODCursor<T extends HTMLElement>(
 
   return {
     ref: cursorRef,
+    refMarker: cursorMarkerRef,
     timeMark: {
       seconds: timeMark,
       duration: prettyDuration(timeMark),
@@ -180,13 +208,14 @@ type PxInterpObj<T extends HTMLElement> = {
 // resized, using the new values of height and width
 function usePxInterpolation<T extends HTMLElement>(
   maxDuration: number,
-  maxViewCount: number
+  maxViewCount: number,
+  widthCorrection: number
 ): PxInterpObj<T> {
   const ref = useRef<T>(null);
   const [dim, setDim] = useState({ width: 0, height: 0, left: 0 });
 
   const toWidthPx = useCallback(
-    (d: number) => range(0, maxDuration, 0, dim.width, d),
+    (d: number) => range(0, maxDuration, 0, dim.width + widthCorrection, d),
     [maxDuration, dim.width]
   );
   const toHeightPx = useCallback(
@@ -194,7 +223,8 @@ function usePxInterpolation<T extends HTMLElement>(
     [maxViewCount, dim.height]
   );
   const toTimeMark = useCallback(
-    (px: number) => Math.round(range(0, dim.width, 0, maxDuration, px)),
+    (px: number) =>
+      Math.round(range(0, dim.width + widthCorrection, 0, maxDuration, px)),
     [dim.width, maxDuration]
   );
   const updateSize = useDebounce(() => {
