@@ -4,6 +4,9 @@ import { type VOD } from "@/lib/api/vods";
 import { useCallback, useState } from "react";
 import TimelineBar, { TimeMark } from "./TimelineBar";
 
+import Clip from "./Clip";
+import "./Timeline.scss";
+
 const nearThreshold = 5;
 
 type TimelineProps = {
@@ -32,11 +35,21 @@ const Timeline = ({ clips, vod }: TimelineProps) => {
     <>
       <main>
         <section>
-          <p>{timeMark.duration}</p>
+          <h2>Contextual clips</h2>
+          <span>{timeMark.duration}</span>
+          <div className="clips-list">
+            {clipsCtx.map((c) => (
+              <Clip
+                key={c.id}
+                title={c.title}
+                seconds={c.duration}
+                thumbnailUrl={c.thumbnail_url}
+                creator={c.creator_name}
+              />
+            ))}
+          </div>
         </section>
-        {clipsCtx.map((c) => (
-          <article key={c.id}>{c.title}</article>
-        ))}
+
         <TimelineBar
           clips={clips}
           vod={vod}

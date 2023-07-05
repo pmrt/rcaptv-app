@@ -1,0 +1,15 @@
+$colors: (
+  bright-red: #ff4768,
+  rose: #f5cfff,
+  light-purple: #cab8ff,
+  dark-rubber: #1d1d1d,
+  silver-black: #313131,
+  silver-white: #313131,
+  white: #dbdbdb,
+  soft-white: #aeaeae,
+  grey: #858585,
+);
+
+@function color($color) {
+  @return map-get($colors, $color);
+}

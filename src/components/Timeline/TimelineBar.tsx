@@ -7,6 +7,7 @@ import { ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import { colorize } from "@/lib/colorize";
 import { useDebounce } from "rooks";
 import "./TimelineBar.scss";
+import { prettyDuration } from "./helpers";
 
 type TimelineBarProps = {
   clips: ClipWithNonNullableVodOffset[];
@@ -62,8 +63,8 @@ const TimelineBar = ({
         <span className="cursor-marker" ref={cursorMarkerRef} />
         <div className="outer" ref={outerRef}>
           <div className="cursor" ref={cursorRef}>
-            <span className="cursor-threshold-area-left" />
-            <span className="cursor-threshold-area-right" />
+            <span className="cursor-threshold-area cursor-threshold-area-left" />
+            <span className="cursor-threshold-area cursor-threshold-area-right" />
           </div>
           {clips.map((clip, i) => (
             <article
@@ -128,7 +129,7 @@ function useVODCursor<T extends HTMLElement>(
       switch (type) {
         case "mousedown":
           isDragging = true;
-          // el.style.transform = `scale(1.2)`;
+          el.classList.add("active");
           if (target !== parent) return;
           el.style.left = `${Math.round(offsetX - width / 2)}px`;
           elMarker.style.left = `${Math.round(offsetX - width / 2)}px`;
@@ -148,7 +149,7 @@ function useVODCursor<T extends HTMLElement>(
           break;
         case "mouseup":
           isDragging = false;
-          // el.style.transform = `scale(1)`;
+          el.classList.remove("active");
           setTimeMark(toTimeMark(parseInt(el.style.left, 10)));
           break;
       }
@@ -216,7 +217,7 @@ function usePxInterpolation<T extends HTMLElement>(
 
   const toWidthPx = useCallback(
     (d: number) => range(0, maxDuration, 0, dim.width + widthCorrection, d),
-    [maxDuration, dim.width]
+    [maxDuration, dim.width, widthCorrection]
   );
   const toHeightPx = useCallback(
     (d: number) => range(0, maxViewCount, 0, dim.height, d),
@@ -225,7 +226,7 @@ function usePxInterpolation<T extends HTMLElement>(
   const toTimeMark = useCallback(
     (px: number) =>
       Math.round(range(0, dim.width + widthCorrection, 0, maxDuration, px)),
-    [dim.width, maxDuration]
+    [dim.width, maxDuration, widthCorrection]
   );
   const updateSize = useDebounce(() => {
     if (ref.current) {
@@ -251,26 +252,5 @@ function usePxInterpolation<T extends HTMLElement>(
     dimensions: dim,
   };
 }
-
-const prettyDuration = (seconds: number) => {
-  const t = new Date(0);
-  t.setHours(0);
-  t.setMinutes(0);
-  t.setSeconds(seconds);
-  let str = "";
-  const [h, m, s] = [t.getHours(), t.getMinutes(), t.getSeconds()];
-
-  if (h != 0) {
-    str += `${h}h`;
-  }
-  if (m != 0) {
-    str += `${m}m`;
-  }
-  if (s != 0) {
-    str += `${s}s`;
-  }
-
-  return str;
-};
 
 export default TimelineBar;

@@ -1,0 +1,7 @@
+.clips-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 345px);
+  grid-auto-flow: row;
+  justify-content: center;
+  gap: 24px;
+}

@@ -49,8 +49,7 @@
   transition: transform 50ms ease-in-out;
   z-index: 1;
 
-  & > .cursor-threshold-area-left,
-  & > .cursor-threshold-area-right {
+  & > .cursor-threshold-area {
     position: absolute;
     height: calc(100% - $extra-height);
     top: $extra-height;
@@ -58,9 +57,11 @@
     width: var(--threshold-width);
     opacity: 0.08;
   }
-
   & > .cursor-threshold-area-left {
     left: calc(-1 * var(--threshold-width));
+  }
+  &.active > .cursor-threshold-area {
+    background-color: red;
   }
 
   /*
