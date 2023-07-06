@@ -23,6 +23,7 @@ export default function TimelinePage() {
   if (!vid) {
     throw new ErrPageError("Missing vid in the URL");
   }
+
   const { data: vodsData, isSuccess: vodsOk } = useQuery(vodByVidQuery(vid));
   const vod = (vodsData as VODResponse).data.vods[0];
   const clipsResult = useQuery({
@@ -38,19 +39,21 @@ export default function TimelinePage() {
     isError: isClipsError,
   } = clipsResult;
 
+  // Prevent inconsistent behaviour when /@handle/vid_id changes. If the user
+  // changes only the @handle manually by rewriting the URL and the vid_id is
+  // the same, redirect to the new @handle to get the new vid_id instead of using
+  // the old vid_id.
   useEffect(() => {
-    // This prevents inconsistent behaviour when handle changes
-    //
-    // Step 1. User is in /@handle-A/vodid-A
-    // Step 2. User manually changes @handle-A to @handle-B
-    // Step 3. User is now in /@handle-B/vodid-A. VOD/Clips shown are for vodid-A,
-    // despite VOD/Clips belonging to handle-A
-    //
-    // To fix this, if handle changes, we redirect to the new handle
-    if (vodsOk && clipsOk) {
-      navigate(`/${handle}`, { replace: true });
+    const lsKey = `timeline_last_search`;
+    const laststr = window.localStorage.getItem(lsKey);
+    if (laststr) {
+      const last = JSON.parse(laststr);
+      if (last?.vid === vid && last.handle !== handle) {
+        navigate(`/${handle}`, { replace: true });
+      }
     }
-  }, [handle, vodsData, clipsOk, vodsOk, navigate]);
+    window.localStorage.setItem(lsKey, JSON.stringify({ vid, handle }));
+  }, [vid, handle, navigate]);
 
   if (isClipsError) {
     throw clipsResult.error;
