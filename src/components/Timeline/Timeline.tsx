@@ -37,8 +37,12 @@ const Timeline = ({ clips, vod }: TimelineProps) => {
     <>
       <main>
         <section>
-          <h2>Contextual clips</h2>
-          <span>{timeMark.duration}</span>
+          <header>
+            <h2>Contextual clips</h2>
+            <span>
+              <small>{timeMark.duration}</small>
+            </span>
+          </header>
           <div className="clips-list">
             {clipsCtx.map((c) => (
               <Clip
