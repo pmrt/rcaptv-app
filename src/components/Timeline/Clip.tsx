@@ -18,7 +18,7 @@ const Clip = ({ title, seconds, thumbnailUrl, creator }: ClipProps) => (
     `,
     }}
   >
-    <h3>{title}</h3>
+    <h3 title={title}>{title}</h3>
     <small className="clip-creator">by {creator}</small>
     <small className="clip-duration">
       <span>{prettyDuration(seconds)}</span>

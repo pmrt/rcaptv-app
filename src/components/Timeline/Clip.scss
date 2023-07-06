@@ -21,6 +21,11 @@
 
   h3 {
     color: var(--color-soft-white);
+    display: -webkit-box;
+    max-height: 51px;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .clip-creator {
