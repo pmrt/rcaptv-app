@@ -10,6 +10,8 @@ $colors: (
   grey: #858585,
 );
 
+$page-padding: 30px;
+
 @function color($color) {
   @return map-get($colors, $color);
 }

@@ -6,6 +6,7 @@ export default function ErrorPage() {
   if (error instanceof ErrFetch && error.errors.length > 0) {
     return (
       <div className="fetch-error-list">
+        <h1>Oops!</h1>
         <ul>
           {error.errors.map((msg, i) => (
             <li key={i}>{msg}</li>

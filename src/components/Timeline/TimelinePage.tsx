@@ -53,7 +53,7 @@ export default function TimelinePage() {
   }, [handle, vodsData, clipsOk, vodsOk, navigate]);
 
   if (isClipsError) {
-    return <h1>Error clips</h1>;
+    throw clipsResult.error;
   }
 
   let clips: ClipWithNonNullableVodOffset[] = [];

@@ -52,14 +52,18 @@ const Timeline = ({ clips, vod }: TimelineProps) => {
           </div>
         </section>
 
-        <TimelineBar
-          clips={clips}
-          vod={vod}
-          onTimeMarkChange={onTimeMarkChange}
-          thresholdAreaSeconds={thresholdAreaSeconds}
-          minThresholdAreaSeconds={(vod.duration_seconds * nearThreshold) / 100}
-          onThresholdAreaChange={setThresholdAreaSeconds}
-        />
+        <div className="timeline-wrapper with-background">
+          <TimelineBar
+            clips={clips}
+            vod={vod}
+            onTimeMarkChange={onTimeMarkChange}
+            thresholdAreaSeconds={thresholdAreaSeconds}
+            minThresholdAreaSeconds={
+              (vod.duration_seconds * nearThreshold) / 100
+            }
+            onThresholdAreaChange={setThresholdAreaSeconds}
+          />
+        </div>
       </main>
     </>
   );
