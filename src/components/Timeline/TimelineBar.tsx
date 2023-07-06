@@ -60,6 +60,7 @@ const TimelineBar = ({
     refMarker: cursorMarkerRef,
     refHandler: cursorThresholdHandlerRef,
     timeMark,
+    setTimeMark,
   } = useVODCursor(pxInterpObj, onThresholdAreaChange, minThresholdAreaSeconds);
 
   useEffect(() => {
@@ -84,6 +85,14 @@ const TimelineBar = ({
   useEffect(() => {
     onTimeMarkChange(timeMark.seconds, timeMark.duration);
   }, [timeMark.duration, timeMark.seconds, onTimeMarkChange]);
+
+  // Go directly to first clip with more views
+  useEffect(() => {
+    if (clips.length > 0) {
+      const { vod_offset } = clips[0];
+      setTimeMark(vod_offset);
+    }
+  }, [clips, setTimeMark]);
   return (
     <aside className="timeline-bar">
       <div className="timeline-box">
@@ -124,6 +133,7 @@ type VODCursorObj<T extends HTMLElement> = {
   refMarker: RefObject<T>;
   refHandler: RefObject<T>;
   timeMark: TimeMark;
+  setTimeMark: Dispatch<SetStateAction<number>>;
 };
 // VOD Cursor, requires usePxInterpolation hook.
 function useVODCursor<T extends HTMLElement>(
@@ -282,6 +292,7 @@ function useVODCursor<T extends HTMLElement>(
     ref: cursorRef,
     refMarker: cursorMarkerRef,
     refHandler: cursorThresholdHandlerRef,
+    setTimeMark: setTimeMark,
     timeMark: {
       seconds: timeMark,
       duration: prettyDuration(timeMark),
