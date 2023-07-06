@@ -18,6 +18,9 @@ const Timeline = ({ clips, vod }: TimelineProps) => {
     seconds: 0,
     duration: "",
   });
+  const [thresholdAreaSeconds, setThresholdAreaSeconds] = useState<number>(
+    (vod.duration_seconds * nearThreshold) / 100
+  );
   const onTimeMarkChange = useCallback((sec: number, duration: string) => {
     setTimeMark({
       seconds: sec,
@@ -25,11 +28,10 @@ const Timeline = ({ clips, vod }: TimelineProps) => {
     });
   }, []);
 
-  const thresholdArea = (vod.duration_seconds * nearThreshold) / 100;
   const clipsCtx = clips.filter(
     (c) =>
-      c.vod_offset >= timeMark.seconds - thresholdArea &&
-      c.vod_offset <= timeMark.seconds + thresholdArea
+      c.vod_offset >= timeMark.seconds - thresholdAreaSeconds &&
+      c.vod_offset <= timeMark.seconds + thresholdAreaSeconds
   );
   return (
     <>
@@ -54,7 +56,9 @@ const Timeline = ({ clips, vod }: TimelineProps) => {
           clips={clips}
           vod={vod}
           onTimeMarkChange={onTimeMarkChange}
-          nearThreshold={nearThreshold}
+          thresholdAreaSeconds={thresholdAreaSeconds}
+          minThresholdAreaSeconds={(vod.duration_seconds * nearThreshold) / 100}
+          onThresholdAreaChange={setThresholdAreaSeconds}
         />
       </main>
     </>

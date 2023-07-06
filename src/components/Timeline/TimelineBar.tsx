@@ -1,7 +1,15 @@
 import { type VOD } from "@/lib/api/vods";
 
 import { noop, range } from "@/lib/utils";
-import { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  RefObject,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import { colorize } from "@/lib/colorize";
@@ -12,15 +20,19 @@ import { prettyDuration } from "./helpers";
 type TimelineBarProps = {
   clips: ClipWithNonNullableVodOffset[];
   vod: VOD;
-  nearThreshold: number;
+  thresholdAreaSeconds: number;
+  minThresholdAreaSeconds: number;
   onTimeMarkChange?: (seconds: number, duration: string) => void;
+  onThresholdAreaChange: Dispatch<SetStateAction<number>>;
 };
 
 const TimelineBar = ({
   clips,
   vod,
   onTimeMarkChange = noop,
-  nearThreshold,
+  thresholdAreaSeconds,
+  minThresholdAreaSeconds,
+  onThresholdAreaChange = noop,
 }: TimelineBarProps) => {
   const colorInterp = colorize(
     // clips is ordered from high view count to low, so we invert the colors:
@@ -35,24 +47,39 @@ const TimelineBar = ({
   const pxInterpObj = usePxInterpolation<HTMLDivElement>(
     vod.duration_seconds,
     0,
-    -4
+    // This should be the same width than cursor size (.cursor) in negative so
+    // the width to pixel conversion and box ends are more accuratewith the
+    // cursor. There is no easy way right now to factorize this. Merging both
+    // hooks into one should make this easy as pxInterpolation would have
+    // direct access to cursor el.
+    -2
   );
   const { ref: outerRef, toWidthPx } = pxInterpObj;
   const {
     ref: cursorRef,
     refMarker: cursorMarkerRef,
+    refHandler: cursorThresholdHandlerRef,
     timeMark,
-  } = useVODCursor(pxInterpObj);
+  } = useVODCursor(pxInterpObj, onThresholdAreaChange, minThresholdAreaSeconds);
 
   useEffect(() => {
     if (cursorRef.current) {
-      const thresholdArea = (vod.duration_seconds * nearThreshold) / 100;
       cursorRef.current.style.setProperty(
         "--threshold-width",
-        `${toWidthPx(thresholdArea)}px`
+        `${toWidthPx(thresholdAreaSeconds)}px`
       );
     }
-  }, [cursorRef, nearThreshold, toWidthPx, vod.duration_seconds]);
+  }, [cursorRef, thresholdAreaSeconds, toWidthPx]);
+
+  useEffect(() => {
+    const box = document.querySelector(".timeline-box") as HTMLElement;
+    if (!box) return;
+
+    box.style.setProperty(
+      "--five-min-px-size",
+      `${toWidthPx(5 * 60).toString()}px`
+    );
+  }, [toWidthPx]);
 
   useEffect(() => {
     onTimeMarkChange(timeMark.seconds, timeMark.duration);
@@ -61,6 +88,10 @@ const TimelineBar = ({
     <aside className="timeline-bar">
       <div className="timeline-box">
         <span className="cursor-marker" ref={cursorMarkerRef} />
+        <span
+          className="cursor-threshold-handler"
+          ref={cursorThresholdHandlerRef}
+        />
         <div className="outer" ref={outerRef}>
           <div className="cursor" ref={cursorRef}>
             <span className="cursor-threshold-area cursor-threshold-area-left" />
@@ -91,11 +122,14 @@ export type TimeMark = {
 type VODCursorObj<T extends HTMLElement> = {
   ref: RefObject<T>;
   refMarker: RefObject<T>;
+  refHandler: RefObject<T>;
   timeMark: TimeMark;
 };
 // VOD Cursor, requires usePxInterpolation hook.
 function useVODCursor<T extends HTMLElement>(
-  pxInterpObj: PxInterpObj<T>
+  pxInterpObj: PxInterpObj<T>,
+  onThresholdAreaChange: Dispatch<SetStateAction<number>>,
+  minThresholdAreaSeconds: number
 ): VODCursorObj<T> {
   const {
     ref: outerRef,
@@ -105,6 +139,7 @@ function useVODCursor<T extends HTMLElement>(
   } = pxInterpObj;
   const cursorRef = useRef<T>(null);
   const cursorMarkerRef = useRef<T>(null);
+  const cursorThresholdHandlerRef = useRef<T>(null);
   const [timeMark, setTimeMark] = useState(0);
 
   // update offset when hook is re-run
@@ -114,25 +149,35 @@ function useVODCursor<T extends HTMLElement>(
   if (cursorMarkerRef.current) {
     cursorMarkerRef.current.style.left = `${toWidthPx(timeMark)}px`;
   }
+  if (cursorThresholdHandlerRef.current) {
+    cursorThresholdHandlerRef.current.style.left = `${toWidthPx(timeMark)}px`;
+  }
 
   useEffect(() => {
     const el = cursorRef.current;
     const elMarker = cursorMarkerRef.current;
+    const elHandler = cursorThresholdHandlerRef.current;
     const parent = outerRef.current;
     const width = el?.getBoundingClientRect().width ?? 0;
     let isDragging = false;
 
     const cursorUpdate = (evt: MouseEvent) => {
       const { offsetX, target, type, clientX } = evt;
-      if (!el || !elMarker) return;
+      if (!el || !elMarker || !elHandler) return;
 
       switch (type) {
         case "mousedown":
+          if (target instanceof HTMLElement) {
+            if (target.classList.contains("cursor-threshold-handler")) {
+              return;
+            }
+          }
           isDragging = true;
           el.classList.add("active");
           if (target !== parent) return;
           el.style.left = `${Math.round(offsetX - width / 2)}px`;
           elMarker.style.left = `${Math.round(offsetX - width / 2)}px`;
+          elHandler.style.left = `${Math.round(offsetX - width / 2)}px`;
           break;
         case "mousemove":
           if (isDragging) {
@@ -145,6 +190,7 @@ function useVODCursor<T extends HTMLElement>(
             );
             el.style.left = `${px}px`;
             elMarker.style.left = `${px}px`;
+            elHandler.style.left = `${px}px`;
           }
           break;
         case "mouseup":
@@ -168,9 +214,74 @@ function useVODCursor<T extends HTMLElement>(
     };
   }, [toWidthPx, toTimeMark, parentDims.left, parentDims.width, outerRef]);
 
+  useEffect(() => {
+    const minThresholdAreaPx = toWidthPx(minThresholdAreaSeconds);
+    const maxThresholdAreaPx = parentDims.width / 2;
+    const cursor = cursorRef.current;
+    const handlerEl = cursorThresholdHandlerRef.current;
+    if (!cursor) return;
+    if (!handlerEl) return;
+    let isDragging = false;
+    let offset = 0;
+    let delta = 0;
+    let lastNewWidth = minThresholdAreaPx;
+
+    const cursorHandler = (evt: MouseEvent) => {
+      evt.preventDefault();
+      const { type } = evt;
+      switch (type) {
+        case "mousedown":
+          isDragging = true;
+          delta = 0;
+          offset = evt.screenX;
+          handlerEl.classList.add("active");
+          break;
+        case "mousemove":
+          if (isDragging) {
+            delta = evt.screenX - offset;
+            // change threshold area only visually
+            const w = parseInt(
+              cursor.style.getPropertyValue("--threshold-width"),
+              10
+            );
+            const newWidth = Math.min(
+              Math.max(delta + w, minThresholdAreaPx),
+              maxThresholdAreaPx
+            );
+            cursor.style.setProperty("--threshold-width", `${newWidth}px`);
+            lastNewWidth = newWidth;
+          }
+          break;
+        case "mouseup":
+          isDragging = false;
+          handlerEl.classList.remove("active");
+
+          onThresholdAreaChange(toTimeMark(lastNewWidth));
+          break;
+      }
+    };
+
+    handlerEl.addEventListener("mousedown", cursorHandler);
+    window.addEventListener("mousemove", cursorHandler);
+    window.addEventListener("mouseup", cursorHandler);
+
+    return () => {
+      handlerEl.removeEventListener("mousedown", cursorHandler);
+      window.removeEventListener("mousemove", cursorHandler);
+      window.removeEventListener("mouseup", cursorHandler);
+    };
+  }, [
+    onThresholdAreaChange,
+    toWidthPx,
+    toTimeMark,
+    minThresholdAreaSeconds,
+    parentDims.width,
+  ]);
+
   return {
     ref: cursorRef,
     refMarker: cursorMarkerRef,
+    refHandler: cursorThresholdHandlerRef,
     timeMark: {
       seconds: timeMark,
       duration: prettyDuration(timeMark),
