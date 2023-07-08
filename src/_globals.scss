@@ -11,6 +11,8 @@ $colors: (
 );
 
 $page-padding: 30px;
+$clip-width: 346px;
+$clip-height: 200px;
 
 @function color($color) {
   @return map-get($colors, $color);

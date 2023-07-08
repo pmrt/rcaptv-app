@@ -90,9 +90,12 @@ const Timeline = ({ clips, vod, user }: TimelineProps) => {
     <>
       <main>
         <header className="timeline-header">
-          <h1>Timeline</h1>
-          {user ? <h1>{user}</h1> : null}
-          <h3>{vod.title}</h3>
+          <div className="title">
+            <h1>Timeline</h1>
+            <span className="divider" />
+            {user ? <h2 className="user">{user}</h2> : null}
+          </div>
+          <h3 className="vod-title">{vod.title}</h3>
         </header>
         <Player vid={vod.id} playerRef={playerRef} startAt={topClipOffset} />
         <ClipsList clips={clips} />

@@ -1,6 +1,39 @@
 .timeline-header {
   position: relative;
   z-index: 1;
+  margin-bottom: $page-padding;
+
+  h1 {
+    color: #fff;
+  }
+
+  .divider {
+    $size: 4px;
+    width: $size;
+    height: $size;
+    border-radius: 50%;
+    background: var(--color-white);
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    margin-bottom: $page-padding/2;
+
+    & > * {
+      margin-right: 10px;
+    }
+
+    .user {
+      text-transform: none;
+    }
+  }
+
+  .vod-title {
+    color: var(--color-soft-white);
+    line-height: 1.2em;
+    max-width: 25vw;
+  }
 }
 
 main {

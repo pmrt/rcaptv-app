@@ -25,24 +25,30 @@ const ClipsList = ({ clips }: ClipListProps) => {
       <div className={`clips-list-wrapper ${isForeground ? "" : "foreground"}`}>
         <header>
           <h2>Contextual clips</h2>
-          {time.prettyDuration === "" ? (
+          {time.prettyDuration !== "" ? (
             <span>
               <small>{time.prettyDuration}</small>
             </span>
           ) : null}
         </header>
-        <div className="clips-list">
-          {clipsCtx.map((c) => (
-            <Clip
-              key={c.id}
-              title={c.title}
-              seconds={c.duration}
-              vod_offset={c.vod_offset}
-              thumbnailUrl={c.thumbnail_url}
-              creator={c.creator_name}
-            />
-          ))}
-        </div>
+        {clipsCtx.length === 0 ? (
+          <p className="message">
+            No clips at this position, use the timeline below.
+          </p>
+        ) : (
+          <div className="clips-list">
+            {clipsCtx.map((c) => (
+              <Clip
+                key={c.id}
+                title={c.title}
+                seconds={c.duration}
+                vod_offset={c.vod_offset}
+                thumbnailUrl={c.thumbnail_url}
+                creator={c.creator_name}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

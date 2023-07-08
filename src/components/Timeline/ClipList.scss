@@ -1,6 +1,8 @@
 section {
   &.clips-list-section {
-    overflow: hidden;
+    overflow-x: hidden;
+    // extra scrollable area for last clips
+    padding-bottom: $clip-height;
   }
 }
 
@@ -13,7 +15,7 @@ section {
     position: relative;
     display: flex;
     align-items: center;
-    margin-bottom: $page-padding;
+    margin: $page-padding 0;
 
     * {
       margin-right: 10px;
@@ -38,4 +40,9 @@ section {
   grid-auto-flow: row;
   justify-content: center;
   gap: 28px;
+}
+
+.message {
+  font-style: italic;
+  color: var(--color-grey);
 }
