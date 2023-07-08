@@ -2,10 +2,8 @@ import { type VOD } from "@/lib/api/vods";
 
 import { range } from "@/lib/utils";
 import {
-  Dispatch,
   MutableRefObject,
   RefObject,
-  SetStateAction,
   useCallback,
   useEffect,
   useRef,
@@ -25,6 +23,8 @@ import {
   setThresholdAreaSeconds,
   setTime,
 } from "./slice";
+
+const CURSOR_WIDTH = 4;
 
 function updateCursorElements<T extends HTMLElement>(
   els: (T | null)[],
@@ -61,6 +61,9 @@ type TimelineBarProps = {
   vod: VOD;
   playerRef: MutableRefObject<TwitchPlayer.Player | null>;
 };
+// TODO - divide this component in bar > cursor + handler could introduce
+// performance optimizations (as smaller components would subscribe to
+// different parts of state) and would be easier to read.
 const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
   const time = useAppSelector(selectTime);
   const thresholdArea = useAppSelector(selectThresholdArea);
@@ -81,21 +84,50 @@ const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
     [clips]
   )();
 
-  // TODO - usePxInterpolation and useVODCursor should be in the same hook
-  const {
-    toWidthPx,
-    toTimeMark,
-    dimensions: parentDims,
-    ref: outerRef,
-  } = usePxInterpolation<HTMLDivElement>(
-    vod.duration_seconds,
-    0,
-    // This should be the same width than cursor size (.cursor) in negative so
-    // the width to pixel conversion and box ends are more accuratewith the
-    // cursor. There is no easy way right now to factorize this. Merging both
-    // hooks into one should make this easy as pxInterpolation would have
-    // direct access to cursor el.
-    -2
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [parentDims, setParentDims] = useState({
+    width: 0,
+    height: 0,
+    left: 0,
+  });
+
+  const toWidthPx = useCallback(
+    (d: number) =>
+      range(
+        0,
+        vod.duration_seconds,
+        0,
+        parentDims.width + CURSOR_WIDTH * -1,
+        d
+      ),
+    [vod.duration_seconds, parentDims.width]
+  );
+  const toTimeMark = useCallback(
+    (px: number) =>
+      Math.round(
+        range(
+          0,
+          parentDims.width + CURSOR_WIDTH * -1,
+          0,
+          vod.duration_seconds,
+          px
+        )
+      ),
+    [parentDims.width, vod.duration_seconds]
+  );
+
+  const updateSize = useDebounce(() => {
+    if (!outerRef.current) return;
+    const { width, height, left } = outerRef.current.getBoundingClientRect();
+    setParentDims({ width, height, left });
+  }, 1000);
+  useEffect(
+    function updateDimensionsOnResize() {
+      updateSize();
+      window.addEventListener("resize", updateSize);
+      return () => window.removeEventListener("resize", updateSize);
+    },
+    [updateSize]
   );
 
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -314,268 +346,5 @@ const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
     </div>
   );
 };
-
-export type TimeMark = {
-  seconds: number;
-  duration: string;
-};
-
-type VODCursorObj<T extends HTMLElement> = {
-  ref: RefObject<T>;
-  refMarker: RefObject<T>;
-  refHandler: RefObject<T>;
-};
-// VOD Cursor, requires usePxInterpolation hook.
-function useVODCursor<T extends HTMLElement>(
-  timeMark: number,
-  setTimeMark: Dispatch<SetStateAction<number>>,
-  pxInterpObj: PxInterpObj<T>,
-  onThresholdAreaChange: Dispatch<SetStateAction<number>>,
-  minThresholdAreaSeconds: number,
-  playerRef: MutableRefObject<TwitchPlayer.Player | null>
-): VODCursorObj<T> {
-  const {
-    ref: outerRef,
-    toTimeMark,
-    toWidthPx,
-    dimensions: parentDims,
-  } = pxInterpObj;
-  const cursorRef = useRef<T>(null);
-  const cursorMarkerRef = useRef<T>(null);
-  const cursorThresholdHandlerRef = useRef<T>(null);
-
-  // update offset when hook is re-run
-  if (cursorRef.current) {
-    cursorRef.current.style.left = `${toWidthPx(timeMark)}px`;
-  }
-  if (cursorMarkerRef.current) {
-    cursorMarkerRef.current.style.left = `${toWidthPx(timeMark)}px`;
-  }
-  if (cursorThresholdHandlerRef.current) {
-    cursorThresholdHandlerRef.current.style.left = `${toWidthPx(timeMark)}px`;
-  }
-  if (playerRef.current) {
-    playerRef.current.seek(timeMark);
-  }
-
-  useEffect(() => {
-    const el = cursorRef.current;
-    const elMarker = cursorMarkerRef.current;
-    const elHandler = cursorThresholdHandlerRef.current;
-    const parent = outerRef.current;
-    const width = el?.getBoundingClientRect().width ?? 0;
-    let isDragging = false;
-
-    const cursorUpdate = (evt: MouseEvent) => {
-      const { offsetX, target, type, clientX } = evt;
-      if (!el || !elMarker || !elHandler) return;
-
-      switch (type) {
-        case "mousedown":
-          if (target instanceof HTMLElement) {
-            if (target.classList.contains("cursor-threshold-handler")) {
-              return;
-            }
-          }
-          isDragging = true;
-          el.classList.add("active");
-          if (target !== parent) return;
-          el.style.left = `${Math.round(offsetX - width / 2)}px`;
-          elMarker.style.left = `${Math.round(offsetX - width / 2)}px`;
-          elHandler.style.left = `${Math.round(offsetX - width / 2)}px`;
-          break;
-        case "mousemove":
-          if (isDragging) {
-            const px = Math.max(
-              Math.min(
-                Math.round(clientX - parentDims.left),
-                parentDims.width - width
-              ),
-              0
-            );
-            el.style.left = `${px}px`;
-            elMarker.style.left = `${px}px`;
-            elHandler.style.left = `${px}px`;
-          }
-          break;
-        case "mouseup": {
-          isDragging = false;
-          el.classList.remove("active");
-          const tm = toTimeMark(parseInt(el.style.left, 10));
-          setTimeMark(tm);
-          if (playerRef.current) {
-            playerRef.current.seek(tm);
-          }
-          break;
-        }
-      }
-    };
-    if (parent) {
-      parent.addEventListener("mousedown", cursorUpdate);
-      window.addEventListener("mousemove", cursorUpdate);
-      window.addEventListener("mouseup", cursorUpdate);
-    }
-    return () => {
-      if (parent) {
-        parent.removeEventListener("mousedown", cursorUpdate);
-        window.removeEventListener("mousemove", cursorUpdate);
-        window.removeEventListener("mouseup", cursorUpdate);
-      }
-    };
-  }, [
-    toWidthPx,
-    toTimeMark,
-    parentDims.left,
-    parentDims.width,
-    outerRef,
-    setTimeMark,
-    playerRef,
-  ]);
-
-  useEffect(() => {
-    const minThresholdAreaPx = toWidthPx(minThresholdAreaSeconds);
-    const maxThresholdAreaPx = parentDims.width / 2;
-    const cursor = cursorRef.current;
-    const handlerEl = cursorThresholdHandlerRef.current;
-    if (!cursor) return;
-    if (!handlerEl) return;
-    let isDragging = false;
-    let offset = 0;
-    let delta = 0;
-    let lastNewWidth = minThresholdAreaPx;
-
-    const cursorHandler = (evt: MouseEvent) => {
-      evt.preventDefault();
-      const { type } = evt;
-      switch (type) {
-        case "mousedown":
-          isDragging = true;
-          delta = 0;
-          offset = evt.screenX;
-          handlerEl.classList.add("active");
-          break;
-        case "mousemove":
-          if (isDragging) {
-            delta = evt.screenX - offset;
-            // change threshold area only visually
-            const w = parseInt(
-              cursor.style.getPropertyValue("--threshold-width"),
-              10
-            );
-            const newWidth = Math.min(
-              Math.max(delta + w, minThresholdAreaPx),
-              maxThresholdAreaPx
-            );
-            cursor.style.setProperty("--threshold-width", `${newWidth}px`);
-            lastNewWidth = newWidth;
-          }
-          break;
-        case "mouseup":
-          isDragging = false;
-          handlerEl.classList.remove("active");
-
-          onThresholdAreaChange(toTimeMark(lastNewWidth));
-          break;
-      }
-    };
-
-    handlerEl.addEventListener("mousedown", cursorHandler);
-    window.addEventListener("mousemove", cursorHandler);
-    window.addEventListener("mouseup", cursorHandler);
-
-    return () => {
-      handlerEl.removeEventListener("mousedown", cursorHandler);
-      window.removeEventListener("mousemove", cursorHandler);
-      window.removeEventListener("mouseup", cursorHandler);
-    };
-  }, [
-    onThresholdAreaChange,
-    toWidthPx,
-    toTimeMark,
-    minThresholdAreaSeconds,
-    parentDims.width,
-  ]);
-
-  return {
-    ref: cursorRef,
-    refMarker: cursorMarkerRef,
-    refHandler: cursorThresholdHandlerRef,
-  };
-}
-
-type PxInterpObj<T extends HTMLElement> = {
-  ref: React.RefObject<T>;
-  toWidthPx: (d: number) => number;
-  toHeightPx: (d: number) => number;
-  toTimeMark: (px: number) => number;
-  dimensions: {
-    width: number;
-    height: number;
-    left: number;
-  };
-};
-// usePxInterpolation takes a given max duration and a max view count and
-// returns a react reference and two toPx functions: toWidthPx and toHeightPx.
-// When an element is set to the given react reference, the hook will use the
-// actual size in both dimensions: width and height of the element for the
-// interpolation with the duration in the width dimension and the view count in
-// the height dimension.
-
-// In other words, both toWidthPx(d) and toHeightPx(v) will take a given
-// duration or a view count, let's say a total duration of 100s with a
-// WidthxHeight = 1000x1000px, and each function will return the value in
-// pixels in the range of their dimension [0,width] or [0,height] (depending on
-// the function used), that corresponds to the range of the value in the
-// duration range [0, total_duration]. For example, for the values above, if we
-// pass a d=50s, toWidthPx(d), it would return 500 (pixels) because 50s in the
-// range of [0,100s] corresponds to 500px in the range of [0,1000px]
-//
-// The hook will cause a re-render with the corrected values if the window is
-// resized, using the new values of height and width
-function usePxInterpolation<T extends HTMLElement>(
-  maxDuration: number,
-  maxViewCount: number,
-  widthCorrection: number
-): PxInterpObj<T> {
-  const ref = useRef<T>(null);
-  const [dim, setDim] = useState({ width: 0, height: 0, left: 0 });
-
-  const toWidthPx = useCallback(
-    (d: number) => range(0, maxDuration, 0, dim.width + widthCorrection, d),
-    [maxDuration, dim.width, widthCorrection]
-  );
-  const toHeightPx = useCallback(
-    (d: number) => range(0, maxViewCount, 0, dim.height, d),
-    [maxViewCount, dim.height]
-  );
-  const toTimeMark = useCallback(
-    (px: number) =>
-      Math.round(range(0, dim.width + widthCorrection, 0, maxDuration, px)),
-    [dim.width, maxDuration, widthCorrection]
-  );
-  const updateSize = useDebounce(() => {
-    if (ref.current) {
-      const { width, height, left } = ref.current.getBoundingClientRect();
-      setDim({
-        width,
-        height,
-        left,
-      });
-    }
-  }, 1000);
-  useEffect(() => {
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, [updateSize]);
-
-  return {
-    ref,
-    toWidthPx,
-    toHeightPx,
-    toTimeMark,
-    dimensions: dim,
-  };
-}
 
 export default TimelineBar;
