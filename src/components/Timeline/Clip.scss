@@ -1,5 +1,6 @@
+$padding: 12px;
+
 .clip-card {
-  $padding: 12px;
   position: relative;
   width: 346px;
   height: 200px;
@@ -31,13 +32,20 @@
   .clip-creator {
     color: var(--color-grey);
   }
+}
+
+.clip-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: absolute;
+  bottom: $padding;
+  left: $padding;
+  right: $padding;
 
   .clip-duration {
-    position: absolute;
-    bottom: $padding;
-    left: $padding;
     background-color: lighten(color(dark-rubber), 25%);
-    padding: 2px 5px;
+    padding: 5px;
     font-weight: bold;
   }
 }

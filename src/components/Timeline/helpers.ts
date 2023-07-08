@@ -1,6 +1,14 @@
 export const extractStreamer = (handle: string | undefined) =>
   handle?.[0] === "@" ? handle.slice(1, handle.length) : null;
 
+export const duration = (seconds: number) => {
+  const t = new Date(0);
+  t.setHours(0);
+  t.setMinutes(0);
+  t.setSeconds(seconds);
+  return `${t.getHours()}h:${t.getMinutes()}m:${t.getSeconds()}s`;
+};
+
 export const prettyDuration = (seconds: number) => {
   const t = new Date(0);
   t.setHours(0);
@@ -15,9 +23,6 @@ export const prettyDuration = (seconds: number) => {
   if (m != 0) {
     str += `${m}m`;
   }
-  if (s != 0) {
-    str += `${s}s`;
-  }
-
+  str += `${s}s`;
   return str;
 };

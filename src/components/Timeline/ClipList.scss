@@ -1,0 +1,41 @@
+section {
+  &.clips-list-section {
+    overflow: hidden;
+  }
+}
+
+.clips-list-wrapper {
+  will-change: transform;
+  transform: translateX(100vw);
+  transition: transform 500ms ease-in-out;
+
+  header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: $page-padding;
+
+    * {
+      margin-right: 10px;
+    }
+
+    span small {
+      background-color: var(--color-dark-rubber);
+      padding: 4px 10px;
+      color: var(--color-soft-white);
+    }
+  }
+
+  &.foreground {
+    transform: translateX(0);
+  }
+}
+
+.clips-list {
+  opacity: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 345px);
+  grid-auto-flow: row;
+  justify-content: center;
+  gap: 28px;
+}

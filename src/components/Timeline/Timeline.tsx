@@ -1,73 +1,102 @@
 import { type ClipWithNonNullableVodOffset } from "@/lib/api/clips";
+import { useEffect, useRef } from "react";
 
 import { type VOD } from "@/lib/api/vods";
-import { useCallback, useState } from "react";
-import TimelineBar, { TimeMark } from "./TimelineBar";
+import { TwitchPlayer } from "types/global";
 
-import Clip from "./Clip";
+import Player from "./Player";
+import TimelineBar from "./TimelineBar";
+
+import { useAppDispatch } from "@/lib/hooks";
+import ClipsList from "./ClipList";
 import "./Timeline.scss";
-
-const nearThreshold = 5;
+import { CLIP_NEAR_THRESHOLD } from "./constants";
+import { hidePlayer, setThresholdArea, setTime, showPlayer } from "./slice";
 
 type TimelineProps = {
   clips: ClipWithNonNullableVodOffset[];
   vod: VOD;
+  user: string | null;
 };
-const Timeline = ({ clips, vod }: TimelineProps) => {
-  const [timeMark, setTimeMark] = useState<TimeMark>({
-    seconds: 0,
-    duration: "",
-  });
-  const [thresholdAreaSeconds, setThresholdAreaSeconds] = useState<number>(
-    (vod.duration_seconds * nearThreshold) / 100
-  );
-  const onTimeMarkChange = useCallback((sec: number, duration: string) => {
-    setTimeMark({
-      seconds: sec,
-      duration: duration,
-    });
-  }, []);
+const Timeline = ({ clips, vod, user }: TimelineProps) => {
+  const playerRef = useRef<TwitchPlayer.Player | null>(null);
 
-  const clipsCtx = clips.filter(
-    (c) =>
-      c.vod_offset >= timeMark.seconds - thresholdAreaSeconds &&
-      c.vod_offset <= timeMark.seconds + thresholdAreaSeconds
+  const dispatch = useAppDispatch();
+
+  useEffect(
+    function initialThresholdArea() {
+      dispatch(
+        setThresholdArea({
+          areaSeconds: (vod.duration_seconds * CLIP_NEAR_THRESHOLD) / 100,
+          vodDurationSeconds: vod.duration_seconds,
+        })
+      );
+    },
+    [dispatch, vod.duration_seconds]
   );
+
+  const topClipOffset = clips.length > 0 ? clips[0].vod_offset : 0;
+  useEffect(
+    function initialTimePosition() {
+      dispatch(setTime(topClipOffset));
+    },
+    [dispatch, topClipOffset]
+  );
+
+  useEffect(
+    function setupKeybindings() {
+      const handleKey = (e: KeyboardEvent) => {
+        const playerEl = playerRef.current;
+        if (!playerEl) return;
+
+        switch (e.key) {
+          case "Escape":
+          case " ":
+            if (playerEl.isPaused()) {
+              dispatch(showPlayer());
+            } else {
+              dispatch(hidePlayer());
+            }
+            break;
+          case "ArrowLeft": {
+            const t = playerEl.getCurrentTime();
+            dispatch(setTime(t - 10));
+            break;
+          }
+          case "ArrowRight": {
+            const t = playerEl.getCurrentTime();
+            dispatch(setTime(t + 30));
+            break;
+          }
+          case "m":
+            if (playerEl.getMuted()) {
+              playerEl.setMuted(false);
+            } else {
+              playerEl.setMuted(true);
+            }
+            break;
+          default:
+            break;
+        }
+      };
+
+      document.addEventListener("keydown", handleKey);
+      return () => document.removeEventListener("keydown", handleKey);
+    },
+    [dispatch]
+  );
+
   return (
     <>
       <main>
-        <section>
-          <header>
-            <h2>Contextual clips</h2>
-            <span>
-              <small>{timeMark.duration}</small>
-            </span>
-          </header>
-          <div className="clips-list">
-            {clipsCtx.map((c) => (
-              <Clip
-                key={c.id}
-                title={c.title}
-                seconds={c.duration}
-                thumbnailUrl={c.thumbnail_url}
-                creator={c.creator_name}
-              />
-            ))}
-          </div>
-        </section>
-
-        <div className="timeline-wrapper with-background">
-          <TimelineBar
-            clips={clips}
-            vod={vod}
-            onTimeMarkChange={onTimeMarkChange}
-            thresholdAreaSeconds={thresholdAreaSeconds}
-            minThresholdAreaSeconds={
-              (vod.duration_seconds * nearThreshold) / 100
-            }
-            onThresholdAreaChange={setThresholdAreaSeconds}
-          />
-        </div>
+        <header className="timeline-header">
+          <h1>Timeline</h1>
+          {user ? <h1>{user}</h1> : null}
+          <h3>{vod.title}</h3>
+        </header>
+        <Player vid={vod.id} playerRef={playerRef} startAt={topClipOffset} />
+        <ClipsList clips={clips} />
+        <TimelineBar clips={clips} vod={vod} playerRef={playerRef} />
       </main>
     </>
   );

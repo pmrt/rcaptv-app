@@ -1,23 +1,12 @@
-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: $page-padding;
-
-  * {
-    margin-right: 10px;
-  }
-
-  span small {
-    background-color: var(--color-dark-rubber);
-    padding: 4px 10px;
-    color: var(--color-soft-white);
-  }
+.timeline-header {
+  position: relative;
+  z-index: 1;
 }
 
-.clips-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 345px);
-  grid-auto-flow: row;
-  justify-content: center;
-  gap: 28px;
+main {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--navbar-height));
+  padding: $page-padding;
+  z-index: 1;
 }

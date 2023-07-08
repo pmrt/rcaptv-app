@@ -150,6 +150,8 @@ $colors: (
     --color-#{""+$name}: #{$color};
     --rgb-#{""+$name}: #{hexToRGB($color)};
   }
+
+  --navbar-height: 5vh;
 }
 
 html {
@@ -183,8 +185,10 @@ small {
   font-size: 0.8rem;
 }
 
-main {
-  position: relative;
-  width: 100%;
-  padding: $page-padding;
+button {
+  border-radius: 0;
+  border: 1px solid var(--color-light-purple);
+  color: var(--color-white);
+  background-color: var(--color-dark-rubber);
+  padding: 4px 10px;
 }

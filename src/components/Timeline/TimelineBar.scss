@@ -4,8 +4,11 @@
   right: 0;
   bottom: 0;
   padding: 100px $page-padding 14px;
+  transform: translateY(10vh);
+  transition: transform 100ms ease-in-out;
 
-  &.with-background {
+  &.foreground {
+    transform: translateY(0);
     background-color: var(--color-silver-black);
     background: linear-gradient(
       0deg,
@@ -96,18 +99,6 @@
   &.active > .cursor-threshold-area {
     background-color: rgba(var(--rgb-light-purple), 50%);
   }
-
-  /*
-  &::before {
-    $size: 8px;
-    content: "";
-    position: absolute;
-    top: 0px;
-    left: -$size + $width/2;
-    border-left: $size solid transparent;
-    border-right: $size solid transparent;
-    border-top: $size solid #000;
-  }*/
 }
 
 .cursor-threshold-handler {

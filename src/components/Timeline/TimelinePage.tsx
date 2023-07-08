@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Timeline from "./Timeline";
 import VodsDisabled from "./VodsDisabled";
+import { extractStreamer } from "./helpers";
 import { vodByVidQuery } from "./loader";
 
 const clipsByVodQuery = (vod: VOD) => ({
@@ -54,6 +55,19 @@ export default function TimelinePage() {
     }
     window.localStorage.setItem(lsKey, JSON.stringify({ vid, handle }));
   }, [vid, handle, navigate]);
+  useEffect(() => {
+    // This prevents inconsistent behaviour when handle changes
+    //
+    // Step 1. User is in /@handle-A/vodid-A
+    // Step 2. User manually changes @handle-A to @handle-B
+    // Step 3. User is now in /@handle-B/vodid-A. VOD/Clips shown are for vodid-A,
+    // despite VOD/Clips belonging to handle-A
+    //
+    // To fix this, if handle changes, we redirect to the new handle
+    if (vodsOk && clipsOk) {
+      navigate(`/${handle}`, { replace: true });
+    }
+  }, [handle, vodsData, clipsOk, vodsOk, navigate]);
 
   if (isClipsError) {
     throw clipsResult.error;
@@ -76,9 +90,7 @@ export default function TimelinePage() {
 
   return (
     <>
-      <h1>Timeline</h1>
-      {vodsOk ? <h2>{vod.title}</h2> : <h2>Loading...</h2>}
-      <Timeline clips={clips} vod={vod} />
+      <Timeline clips={clips} vod={vod} user={extractStreamer(handle)} />
     </>
   );
 }
