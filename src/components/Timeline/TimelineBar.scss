@@ -68,7 +68,7 @@
   --threshold-width: 100px;
   $area-border-size: 6px;
   $area-border: #{$area-border-size} solid var(--color-light-purple);
-  will-change: left;
+  // will-change: left;
   $extra-height: 10px;
   $width: 2px;
   position: absolute;

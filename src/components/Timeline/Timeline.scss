@@ -2,6 +2,8 @@
   position: relative;
   z-index: 1;
   margin-bottom: $page-padding;
+  display: flex;
+  justify-content: space-between;
 
   h1 {
     color: #fff;
@@ -33,6 +35,14 @@
     color: var(--color-soft-white);
     line-height: 1.2em;
     max-width: 25vw;
+  }
+
+  .error {
+    .message {
+      background-color: var(--color-dark-rubber);
+      padding: 10px 8px;
+      color: var(--color-bright-red);
+    }
   }
 }
 

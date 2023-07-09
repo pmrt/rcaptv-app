@@ -16,6 +16,11 @@ interface TimelineState {
     seconds: number;
     min: number;
   };
+  status: {
+    error: string;
+    isPlayerLoading: boolean;
+    isPlayerReady: boolean;
+  };
 }
 
 const initialState: TimelineState = {
@@ -31,20 +36,33 @@ const initialState: TimelineState = {
     seconds: 0,
     min: 100,
   },
+  status: {
+    error: "",
+    isPlayerLoading: false,
+    isPlayerReady: false,
+  },
 };
 
 const timelineSlice = createSlice({
   name: "timeline",
   initialState: initialState,
   reducers: {
-    setTime(state, action: PayloadAction<number | string>) {
-      const s =
-        typeof action.payload === "string"
-          ? parseInt(action.payload, 10)
-          : action.payload;
-      state.time.seconds = s;
-      state.time.duration = duration(s);
-      state.time.prettyDuration = prettyDuration(s);
+    setTime(state, action: PayloadAction<number>) {
+      state.time.seconds = action.payload;
+      state.time.duration = duration(action.payload);
+      state.time.prettyDuration = prettyDuration(action.payload);
+    },
+    setTimeAndShowPlayer(state, action: PayloadAction<number>) {
+      state.time.seconds = action.payload;
+      state.time.duration = duration(action.payload);
+      state.time.prettyDuration = prettyDuration(action.payload);
+      state.player.isForeground = true;
+    },
+    setTimeAndLoading(state, action: PayloadAction<number>) {
+      state.time.seconds = action.payload;
+      state.time.duration = duration(action.payload);
+      state.time.prettyDuration = prettyDuration(action.payload);
+      state.status.isPlayerLoading = true;
     },
     showPlayer(state) {
       state.player.isForeground = true;
@@ -52,9 +70,24 @@ const timelineSlice = createSlice({
     hidePlayer(state) {
       state.player.isForeground = false;
     },
-    setTimeAndShowPlayer(state, action: PayloadAction<number | string>) {
-      timelineSlice.caseReducers.setTime(state, action);
-      timelineSlice.caseReducers.showPlayer(state);
+    setError(state, action: PayloadAction<string>) {
+      state.status.error = action.payload;
+    },
+    setPlayerLoadingAndNotReady(state) {
+      state.status.isPlayerLoading = true;
+      state.status.isPlayerReady = false;
+    },
+    setIsPlayerLoading(state, action: PayloadAction<boolean>) {
+      state.status.isPlayerLoading = action.payload;
+    },
+    setPlayerReady(state) {
+      state.status.isPlayerReady = true;
+      state.status.isPlayerLoading = false;
+    },
+    setPlaying(state) {
+      state.player.isForeground = true;
+      state.status.error = "";
+      state.status.isPlayerLoading = false;
     },
     setThresholdArea(
       state,
@@ -75,16 +108,23 @@ const timelineSlice = createSlice({
 
 export const {
   setTime,
+  setTimeAndLoading,
   showPlayer,
   hidePlayer,
   setThresholdArea,
   setThresholdAreaSeconds,
   setTimeAndShowPlayer,
+  setError,
+  setPlayerLoadingAndNotReady,
+  setIsPlayerLoading,
+  setPlayerReady,
+  setPlaying,
 } = timelineSlice.actions;
 
 export const selectTime = (state: RootState) => state.timeline.time;
 export const selectThresholdArea = (state: RootState) =>
   state.timeline.thresholdArea;
 export const selectPlayer = (state: RootState) => state.timeline.player;
+export const selectStatus = (state: RootState) => state.timeline.status;
 
 export default timelineSlice.reducer;

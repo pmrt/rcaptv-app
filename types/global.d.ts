@@ -23,7 +23,9 @@ type PlayerOptions = {
 };
 
 declare namespace TwitchPlayer {
-  class Player {
+  export type Player = player;
+
+  class player {
     constructor(playerDivID: string, options: PlayerOptions): this;
     setVolume(volume: number): void;
     setVideo(videoID: string, ts: number): void;
@@ -48,20 +50,26 @@ declare namespace TwitchPlayer {
     addEventListener(eventName: string, cb: (...args: any[]) => void): void;
     removeEventListener(eventName: string, cb: (...args: any[]) => void): void;
 
-    CAPTIONS: string;
-    ENDED: string;
-    PAUSE: string;
-    PLAY: string;
-    PLAYBACK_BLOCKED: string;
-    PLAYING: string;
-    OFFLINE: string;
-    ONLINE: string;
-    READY: string;
-    SEEK: string;
+    _player: {
+      _playerState: {
+        playback: "Idle" | "Ready" | "Buffering" | "Playing" | "Ended";
+      };
+    };
+
+    // CAPTIONS: string;
+    // ENDED: string;
+    // PAUSE: string;
+    // PLAY: string;
+    // PLAYBACK_BLOCKED: string;
+    // PLAYING: string;
+    // OFFLINE: string;
+    // ONLINE: string;
+    // READY: string;
+    // SEEK: string;
   }
 
   type Twitch = {
-    Player: Player;
+    Player: typeof player;
   };
 }
 

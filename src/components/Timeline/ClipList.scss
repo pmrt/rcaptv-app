@@ -7,9 +7,9 @@ section {
 }
 
 .clips-list-wrapper {
-  will-change: transform;
+  // will-change: transform;
   transform: translateX(100vw);
-  transition: transform 500ms ease-in-out;
+  transition: transform 300ms ease-in-out;
 
   header {
     position: relative;

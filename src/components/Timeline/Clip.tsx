@@ -24,7 +24,7 @@ const Clip = ({
       const el = evt.target as HTMLButtonElement;
       const offset = el.dataset.offset;
       if (!offset) return;
-      dispatch(setTimeAndShowPlayer(offset));
+      dispatch(setTimeAndShowPlayer(parseInt(offset, 10)));
     },
     [dispatch]
   );

@@ -7,15 +7,11 @@
   height: calc(100vh - var(--navbar-height));
   opacity: 0.05;
   filter: blur(6px) grayscale(1);
-  transition: opacity 500ms ease-in-out, filter 200ms ease-in-out;
+  transition: opacity 300ms ease-in-out, filter 200ms ease-in-out;
   outline: none;
 
   & iframe {
     pointer-events: none;
-    &:focus,
-    &:focus-within {
-      visibility: hidden;
-    }
   }
 
   background-color: linear-gradient(
@@ -45,26 +41,4 @@
 
 #rcap-player {
   height: 100%;
-}
-
-@keyframes showPlayer {
-  0% {
-    opacity: 0.05;
-    filter: blur(6px) grayscale(1);
-  }
-  100% {
-    opacity: 1;
-    filter: blur(0) grayscale(0);
-  }
-}
-
-@keyframes hidePlayer {
-  0% {
-    opacity: 1;
-    filter: blur(0) grayscale(0);
-  }
-  100% {
-    opacity: 1;
-    filter: blur(6px) grayscale(1);
-  }
 }

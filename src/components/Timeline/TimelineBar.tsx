@@ -1,20 +1,12 @@
 import { type VOD } from "@/lib/api/vods";
 
 import { range } from "@/lib/utils";
-import {
-  MutableRefObject,
-  RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import { ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import { colorize } from "@/lib/colorize";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useDebounce } from "rooks";
-import { TwitchPlayer } from "types/global";
 import "./TimelineBar.scss";
 import {
   selectPlayer,
@@ -59,12 +51,11 @@ function updateCursorThresholdWidth<T extends HTMLElement>(
 type TimelineBarProps = {
   clips: ClipWithNonNullableVodOffset[];
   vod: VOD;
-  playerRef: MutableRefObject<TwitchPlayer.Player | null>;
 };
 // TODO - divide this component in bar > cursor + handler could introduce
 // performance optimizations (as smaller components would subscribe to
 // different parts of state) and would be easier to read.
-const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
+const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
   const time = useAppSelector(selectTime);
   const thresholdArea = useAppSelector(selectThresholdArea);
   const { isForeground: isPlayerFg } = useAppSelector(selectPlayer);
@@ -141,12 +132,8 @@ const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
         [cursorRef, cursorMarkerRef, cursorThresholdHandlerRef],
         toWidthPx(time.seconds)
       );
-      // update player position to mirror cursor position
-      if (playerRef.current) {
-        playerRef.current.seek(time.seconds);
-      }
     },
-    [toWidthPx, time.seconds, playerRef]
+    [toWidthPx, time.seconds]
   );
 
   useEffect(
@@ -220,15 +207,12 @@ const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
           }
 
           case "mouseup": {
+            if (!isDragging) return;
             isDragging = false;
             el.classList.remove("active");
             // update pos where we left the cursor
             const t = toTimeMark(parseInt(el.style.left, 10));
             dispatch(setTime(t));
-            // update player
-            if (playerRef.current) {
-              playerRef.current.seek(t);
-            }
             break;
           }
         }
@@ -242,14 +226,7 @@ const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
         window.removeEventListener("mouseup", cursorHandler);
       };
     },
-    [
-      dispatch,
-      outerRef,
-      parentDims.left,
-      parentDims.width,
-      playerRef,
-      toTimeMark,
-    ]
+    [dispatch, outerRef, parentDims.left, parentDims.width, toTimeMark]
   );
 
   useEffect(
@@ -291,6 +268,7 @@ const TimelineBar = ({ clips, vod, playerRef }: TimelineBarProps) => {
           }
 
           case "mouseup": {
+            if (!isDragging) return;
             isDragging = false;
             handlerEl.classList.remove("active");
             dispatch(setThresholdAreaSeconds(toTimeMark(lastNewWidth)));
