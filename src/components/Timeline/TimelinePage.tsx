@@ -1,6 +1,7 @@
-import { ClipWithNonNullableVodOffset, clipsByVod } from "@/lib/api/clips";
+import { clipsByVod } from "@/lib/api/clips";
 import { type VOD, type VODResponse } from "@/lib/api/vods";
 import { ErrPageError } from "@/lib/errors";
+import { useAppDispatch } from "@/lib/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,6 +9,7 @@ import Timeline from "./Timeline";
 import VodsDisabled from "./VodsDisabled";
 import { extractStreamer } from "./helpers";
 import { vodByVidQuery } from "./loader";
+import { setClips, setVod } from "./slice";
 
 const clipsByVodQuery = (vod: VOD) => ({
   queryKey: ["clips", vod],
@@ -19,6 +21,8 @@ type TimelinePageParams = {
   vid: string;
 };
 export default function TimelinePage() {
+  const dispatch = useAppDispatch();
+
   const { vid, handle } = useParams<TimelinePageParams>();
   const navigate = useNavigate();
   if (!vid) {
@@ -39,6 +43,27 @@ export default function TimelinePage() {
     isLoading: isClipsLoading,
     isError: isClipsError,
   } = clipsResult;
+
+  useEffect(
+    function updateVodsState() {
+      if (vodsOk) {
+        dispatch(setVod(vod));
+      }
+    },
+    [dispatch, vod, vodsOk]
+  );
+
+  useEffect(
+    function updateClipsState() {
+      if (clipsOk) {
+        const all = clipsResult.data?.data.clips;
+        if (all) {
+          dispatch(setClips(all));
+        }
+      }
+    },
+    [dispatch, clipsOk, clipsResult.data?.data.clips]
+  );
 
   // Prevent inconsistent behaviour when /@handle/vid_id changes. If the user
   // changes only the @handle manually by rewriting the URL and the vid_id is
@@ -73,13 +98,9 @@ export default function TimelinePage() {
     throw clipsResult.error;
   }
 
-  let clips: ClipWithNonNullableVodOffset[] = [];
   if (clipsOk) {
     const all = clipsResult.data.data.clips;
-    clips = all.filter(
-      (c) => c.vod_offset !== null && c.video_id === vid
-    ) as ClipWithNonNullableVodOffset[];
-    if (clips.length === 0) {
+    if (all.length === 0) {
       return <VodsDisabled />;
     }
   }
@@ -90,7 +111,7 @@ export default function TimelinePage() {
 
   return (
     <>
-      <Timeline clips={clips} vod={vod} user={extractStreamer(handle)} />
+      <Timeline user={extractStreamer(handle)} />
     </>
   );
 }

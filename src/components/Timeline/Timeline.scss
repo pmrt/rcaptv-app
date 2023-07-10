@@ -1,3 +1,5 @@
+@use "sass:math";
+
 .timeline-header {
   position: relative;
   z-index: 1;
@@ -20,7 +22,7 @@
   .title {
     display: flex;
     align-items: center;
-    margin-bottom: $page-padding/2;
+    margin-bottom: math.div($page-padding, 2);
 
     & > * {
       margin-right: 10px;

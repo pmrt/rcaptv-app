@@ -1,17 +1,17 @@
-import { type VOD } from "@/lib/api/vods";
-
 import { range } from "@/lib/utils";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
-import { ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import { colorize } from "@/lib/colorize";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useDebounce } from "rooks";
 import "./TimelineBar.scss";
 import {
-  selectPlayer,
-  selectThresholdArea,
-  selectTime,
+  selectPlayerIsForeground,
+  selectThresholdAreaMin,
+  selectThresholdAreaSeconds,
+  selectTimeSeconds,
+  selectVODClips,
+  selectVodsAnchor,
   setThresholdAreaSeconds,
   setTime,
 } from "./slice";
@@ -48,17 +48,16 @@ function updateCursorThresholdWidth<T extends HTMLElement>(
   }
 }
 
-type TimelineBarProps = {
-  clips: ClipWithNonNullableVodOffset[];
-  vod: VOD;
-};
 // TODO - divide this component in bar > cursor + handler could introduce
 // performance optimizations (as smaller components would subscribe to
 // different parts of state) and would be easier to read.
-const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
-  const time = useAppSelector(selectTime);
-  const thresholdArea = useAppSelector(selectThresholdArea);
-  const { isForeground: isPlayerFg } = useAppSelector(selectPlayer);
+const TimelineBar = () => {
+  const timeSec = useAppSelector(selectTimeSeconds);
+  const thresholdAreaSec = useAppSelector(selectThresholdAreaSeconds);
+  const thresholdAreaMin = useAppSelector(selectThresholdAreaMin);
+  const isPlayerFg = useAppSelector(selectPlayerIsForeground);
+  const clips = useAppSelector(selectVODClips);
+  const vod = useAppSelector(selectVodsAnchor);
 
   const dispatch = useAppDispatch();
 
@@ -86,12 +85,12 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
     (d: number) =>
       range(
         0,
-        vod.duration_seconds,
+        vod?.duration_seconds ?? 0,
         0,
         parentDims.width + CURSOR_WIDTH * -1,
         d
       ),
-    [vod.duration_seconds, parentDims.width]
+    [vod?.duration_seconds, parentDims.width]
   );
   const toTimeMark = useCallback(
     (px: number) =>
@@ -100,11 +99,11 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
           0,
           parentDims.width + CURSOR_WIDTH * -1,
           0,
-          vod.duration_seconds,
+          vod?.duration_seconds ?? 0,
           px
         )
       ),
-    [parentDims.width, vod.duration_seconds]
+    [parentDims.width, vod?.duration_seconds]
   );
 
   const updateSize = useDebounce(() => {
@@ -130,10 +129,10 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
       // update cursor elements
       updateCursorRefs(
         [cursorRef, cursorMarkerRef, cursorThresholdHandlerRef],
-        toWidthPx(time.seconds)
+        toWidthPx(timeSec)
       );
     },
-    [toWidthPx, time.seconds]
+    [toWidthPx, timeSec]
   );
 
   useEffect(
@@ -141,10 +140,10 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
       // update current threshold width for styling
       updateCursorThresholdWidth(
         cursorRef.current,
-        toWidthPx(thresholdArea.seconds)
+        toWidthPx(thresholdAreaSec)
       );
     },
-    [cursorRef, thresholdArea.seconds, toWidthPx]
+    [cursorRef, thresholdAreaSec, toWidthPx]
   );
 
   useEffect(
@@ -231,7 +230,7 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
 
   useEffect(
     function cursorThresholdHandler() {
-      const minPx = toWidthPx(thresholdArea.min);
+      const minPx = toWidthPx(thresholdAreaMin);
       const maxPx = parentDims.width / 2;
       const [cursor, handlerEl] = [
         cursorRef.current,
@@ -286,7 +285,7 @@ const TimelineBar = ({ clips, vod }: TimelineBarProps) => {
         window.removeEventListener("mouseup", cursorThresholdHandler);
       };
     },
-    [dispatch, parentDims.width, thresholdArea.min, toTimeMark, toWidthPx]
+    [dispatch, parentDims.width, thresholdAreaMin, toTimeMark, toWidthPx]
   );
 
   return (

@@ -1,7 +1,4 @@
-import { type ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import { useEffect } from "react";
-
-import { type VOD } from "@/lib/api/vods";
 
 import Player from "./Player";
 import TimelineBar from "./TimelineBar";
@@ -10,27 +7,30 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import ClipsList from "./ClipList";
 import "./Timeline.scss";
 import { CLIP_NEAR_THRESHOLD } from "./constants";
-import { selectStatus, setThresholdArea } from "./slice";
+import {
+  selectStatusError,
+  selectStatusIsPlayerLoading,
+  selectVodsAnchor,
+  setThresholdAreaNearThreshold,
+} from "./slice";
 
 type TimelineProps = {
-  clips: ClipWithNonNullableVodOffset[];
-  vod: VOD;
   user: string | null;
 };
-const Timeline = ({ clips, vod, user }: TimelineProps) => {
+const Timeline = ({ user }: TimelineProps) => {
   const dispatch = useAppDispatch();
+  const vod = useAppSelector(selectVodsAnchor);
 
   useEffect(
     function initialThresholdArea() {
-      dispatch(
-        setThresholdArea({
-          areaSeconds: (vod.duration_seconds * CLIP_NEAR_THRESHOLD) / 100,
-          vodDurationSeconds: vod.duration_seconds,
-        })
-      );
+      dispatch(setThresholdAreaNearThreshold(CLIP_NEAR_THRESHOLD));
     },
-    [dispatch, vod.duration_seconds]
+    [dispatch, vod?.duration_seconds]
   );
+
+  if (!vod) {
+    return <p>Invalid VOD</p>;
+  }
 
   return (
     <>
@@ -46,16 +46,18 @@ const Timeline = ({ clips, vod, user }: TimelineProps) => {
           </div>
           <TimelineState />
         </header>
-        <Player vid={vod.id} initialClip={clips.length > 0 ? clips[0] : null} />
-        <ClipsList clips={clips} />
-        <TimelineBar clips={clips} vod={vod} />
+        <Player />
+        <ClipsList />
+        <TimelineBar />
       </main>
     </>
   );
 };
 
 const TimelineState = () => {
-  const { error, isPlayerLoading } = useAppSelector(selectStatus);
+  const error = useAppSelector(selectStatusError);
+  const isPlayerLoading = useAppSelector(selectStatusIsPlayerLoading);
+
   return (
     <div className="state">
       <div className="error" style={error === "" ? { display: "none" } : {}}>

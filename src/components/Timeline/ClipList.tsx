@@ -1,43 +1,36 @@
-import { type ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import Clip from "./Clip";
 
 import { useAppSelector } from "@/lib/hooks";
 import "./ClipList.scss";
-import { selectPlayer, selectThresholdArea, selectTime } from "./slice";
+import {
+  selectContextualClips,
+  selectPlayerIsForeground,
+  selectTimePrettyDuration,
+} from "./slice";
 
-type ClipListProps = {
-  clips: ClipWithNonNullableVodOffset[];
-};
-
-const ClipsList = ({ clips }: ClipListProps) => {
-  const time = useAppSelector(selectTime);
-  const thresholdArea = useAppSelector(selectThresholdArea);
-  const { isForeground } = useAppSelector(selectPlayer);
-
-  const clipsCtx = clips.filter(
-    (c) =>
-      c.vod_offset >= time.seconds - thresholdArea.seconds &&
-      c.vod_offset <= time.seconds + thresholdArea.seconds
-  );
+const ClipsList = () => {
+  const prettyDuration = useAppSelector(selectTimePrettyDuration);
+  const isPlayerFg = useAppSelector(selectPlayerIsForeground);
+  const ctxClips = useAppSelector(selectContextualClips);
 
   return (
     <section className="clips-list-section">
-      <div className={`clips-list-wrapper ${isForeground ? "" : "foreground"}`}>
+      <div className={`clips-list-wrapper ${isPlayerFg ? "" : "foreground"}`}>
         <header>
           <h2>Contextual clips</h2>
-          {time.prettyDuration !== "" ? (
+          {prettyDuration !== "" ? (
             <span>
-              <small>{time.prettyDuration}</small>
+              <small>{prettyDuration}</small>
             </span>
           ) : null}
         </header>
-        {clipsCtx.length === 0 ? (
+        {ctxClips.length === 0 ? (
           <p className="message">
             No clips at this position, use the timeline below.
           </p>
         ) : (
           <div className="clips-list">
-            {clipsCtx.map((c) => (
+            {ctxClips.map((c) => (
               <Clip
                 key={c.id}
                 title={c.title}

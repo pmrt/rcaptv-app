@@ -4,16 +4,18 @@ import { TwitchPlayer } from "types/global";
 
 const playerElementID = "rcap-player";
 
-import { ClipWithNonNullableVodOffset } from "@/lib/api/clips";
 import "./Player.scss";
 import { TWITCH_PLAYER_SCRIPT } from "./constants";
 import { duration } from "./helpers";
 import {
   hidePlayer,
-  selectPlayer,
-  selectStatus,
-  selectTime,
+  selectPlayerIsForeground,
+  selectStatusIsPlayerReady,
+  selectTimeSeconds,
+  selectTopOffset,
+  selectVodsAnchor,
   setError,
+  setInitialTime,
   setIsPlayerLoading,
   setPlayerLoadingAndNotReady,
   setPlayerReady,
@@ -52,23 +54,22 @@ function waitForBuffering(el: TwitchPlayer.Player | null, cb: () => void) {
   }, 5);
 }
 
-type PlayerProps = {
-  vid: string;
-  initialClip: ClipWithNonNullableVodOffset | null;
-};
-const Player = ({ vid, initialClip }: PlayerProps) => {
+const Player = () => {
   const playerRef = useRef<TwitchPlayer.Player | null>(null);
 
   const dispatch = useAppDispatch();
-  const { isForeground } = useAppSelector(selectPlayer);
-  const { isPlayerReady } = useAppSelector(selectStatus);
-  const time = useAppSelector(selectTime);
+
+  const vid = useAppSelector(selectVodsAnchor)?.id ?? "0";
+  const isPlayerReady = useAppSelector(selectStatusIsPlayerReady);
+  const timeSec = useAppSelector(selectTimeSeconds);
+  const isFg = useAppSelector(selectPlayerIsForeground);
+  const initialOffset = useAppSelector(selectTopOffset);
 
   const isScriptReady = useExternalScript(TWITCH_PLAYER_SCRIPT);
-  const initialOffset = initialClip?.vod_offset ?? 0;
 
   useEffect(() => {
     let firstPlay = true;
+    if (vid === "0") return;
     if (!isScriptReady) return;
     if (!window.Twitch) {
       throw new Error("Error while loading twitch player script");
@@ -142,6 +143,14 @@ const Player = ({ vid, initialClip }: PlayerProps) => {
   useEffect(
     function initialTimePosition() {
       if (isPlayerReady) {
+        dispatch(setInitialTime(initialOffset));
+      } else {
+        // Note: this may seem a little bit counter-intuitive but it's better
+        // for the UX to go to the initialOffset if the player is not ready
+        // yet, this provides visual feedback for the user so that they know
+        // they don't have to wait for the player to load to play with the
+        // timeline bar. When the player is ready, setInitialTime will set
+        // the time only if it wasn't set before
         dispatch(setTime(initialOffset));
       }
     },
@@ -150,30 +159,31 @@ const Player = ({ vid, initialClip }: PlayerProps) => {
 
   useEffect(
     function handleEnteringAndLeaving() {
-      if (isForeground) {
+      if (isFg && isPlayerReady) {
         if (playerRef.current?.isPaused()) {
           playerRef.current?.play();
         }
       }
     },
-    [isForeground, playerRef]
+    [isFg, playerRef, isPlayerReady]
   );
 
   useEffect(
     function handleTimeMarkChange() {
-      if (playerRef.current) {
-        playerRef.current.seek(time.seconds);
+      if (playerRef.current && isPlayerReady) {
+        playerRef.current.seek(timeSec);
         dispatch(setIsPlayerLoading(true));
         waitForBuffering(playerRef.current, () => {
           dispatch(setIsPlayerLoading(false));
         });
       }
     },
-    [time.seconds, dispatch, playerRef]
+    [timeSec, dispatch, playerRef, isPlayerReady]
   );
 
   useEffect(
     function setupKeybindings() {
+      if (!isPlayerReady) return;
       const handleKey = (e: KeyboardEvent) => {
         const playerEl = playerRef.current;
         if (!playerEl) return;
@@ -215,12 +225,12 @@ const Player = ({ vid, initialClip }: PlayerProps) => {
       document.addEventListener("keydown", handleKey);
       return () => document.removeEventListener("keydown", handleKey);
     },
-    [dispatch]
+    [dispatch, isPlayerReady]
   );
 
   return (
     <div
-      className={`rcap-player-wrapper${isForeground ? " foreground" : ""}`}
+      className={`rcap-player-wrapper${isFg ? " foreground" : ""}`}
       tabIndex={-1}
     >
       <div id={playerElementID}></div>
