@@ -1,5 +1,5 @@
 import { useAppDispatch } from "@/lib/hooks";
-import { useCallback, type MouseEventHandler } from "react";
+import { useCallback, useEffect, useRef, type MouseEventHandler } from "react";
 import "./Clip.scss";
 import { prettyDuration } from "./helpers";
 import { setTimeAndShowPlayer } from "./slice";
@@ -28,6 +28,26 @@ const Clip = ({
     },
     [dispatch]
   );
+
+  const jumpBtn = useRef<HTMLButtonElement>(null);
+  const openBtn = useRef<HTMLButtonElement>(null);
+  useEffect(function jumpColorCancel() {
+    const jumpEl = jumpBtn.current;
+    const openEl = openBtn.current;
+    const onOpenMouseOver = () => {
+      jumpEl?.classList.add("default");
+    };
+    const onOpenMouseOut = () => {
+      jumpEl?.classList.remove("default");
+    };
+
+    openEl?.addEventListener("mouseover", onOpenMouseOver);
+    openEl?.addEventListener("mouseout", onOpenMouseOut);
+    return () => {
+      openEl?.removeEventListener("mouseover", onOpenMouseOver);
+      openEl?.removeEventListener("mouseout", onOpenMouseOut);
+    };
+  });
   return (
     <article
       data-offset={vod_offset}
@@ -49,8 +69,23 @@ const Clip = ({
           <span>{prettyDuration(seconds)}</span>
         </small>
         <div className="buttons">
-          <button data-offset={vod_offset} onClick={jumpToOffset}>
-            Open in clip tool
+          <button
+            type="button"
+            className="open-btn"
+            data-offset={vod_offset}
+            onClick={jumpToOffset}
+            ref={openBtn}
+          >
+            Open in Clip Tool
+          </button>
+          <button
+            type="button"
+            className="jump-btn"
+            data-offset={vod_offset}
+            onClick={jumpToOffset}
+            ref={jumpBtn}
+          >
+            Jump
           </button>
         </div>
       </div>

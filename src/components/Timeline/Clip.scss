@@ -18,6 +18,14 @@ $padding: 12px;
     filter: grayscale(0%);
     border-color: var(--color-rose);
     transform: scale(1.05);
+    .jump-btn {
+      background-color: var(--color-light-purple);
+      color: var(--color-dark-rubber);
+      &.default {
+        background-color: var(--color-dark-rubber);
+        color: var(--color-white);
+      }
+    }
   }
 
   h3 {

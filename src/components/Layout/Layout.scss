@@ -187,11 +187,22 @@ small {
 }
 
 button {
-  border-radius: 0;
+  cursor: pointer;
+  // border-radius: 6px;
   border: 1px solid var(--color-light-purple);
   color: var(--color-white);
   background-color: var(--color-dark-rubber);
-  padding: 4px 10px;
+  padding: 5px 9px;
+  transition: background-color 80ms ease-in-out, color 80ms ease-in-out;
+
+  &:hover {
+    background-color: var(--color-light-purple);
+    color: var(--color-dark-rubber);
+  }
+  & + button {
+    border-left: none;
+    // margin-left: 4px;
+  }
 }
 
 body::-webkit-scrollbar {
