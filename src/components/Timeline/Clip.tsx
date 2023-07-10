@@ -47,7 +47,7 @@ const Clip = ({
       openEl?.removeEventListener("mouseover", onOpenMouseOver);
       openEl?.removeEventListener("mouseout", onOpenMouseOut);
     };
-  });
+  }, []);
   return (
     <article
       data-offset={vod_offset}
