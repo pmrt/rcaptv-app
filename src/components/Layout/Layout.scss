@@ -130,6 +130,7 @@ table {
 // setup your colors in a map
 $colors: (
   bright-red: #ff4768,
+  bright-yellow: #fffbaa,
   rose: #f5cfff,
   light-purple: #cab8ff,
   purple: #cf90ff,
@@ -194,6 +195,8 @@ button {
   background-color: var(--color-dark-rubber);
   padding: 5px 9px;
   transition: background-color 80ms ease-in-out, color 80ms ease-in-out;
+  font-weight: 600;
+  font-size: 0.8rem;
 
   &:hover {
     background-color: var(--color-light-purple);

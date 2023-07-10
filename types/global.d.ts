@@ -76,5 +76,7 @@ declare namespace TwitchPlayer {
 declare global {
   interface Window {
     Twitch: Twitch | undefined;
+    seventv: unknown | undefined;
+    _betterttv: unknown | undefined;
   }
 }

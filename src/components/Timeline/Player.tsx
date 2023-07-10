@@ -5,7 +5,7 @@ import { TwitchPlayer } from "types/global";
 const playerElementID = "rcap-player";
 
 import "./Player.scss";
-import { TWITCH_PLAYER_SCRIPT } from "./constants";
+import { ErrorTypes, TWITCH_PLAYER_SCRIPT } from "./constants";
 import { duration } from "./helpers";
 import {
   hidePlayer,
@@ -116,7 +116,10 @@ const Player = () => {
         p.setMuted(false);
         p.setVolume(1);
         dispatch(
-          setError("Twitch loaded a different video, resetting video state.")
+          setError({
+            type: ErrorTypes.ERR_DIFFERENT_VIDEO_DETECTED,
+            message: "Twitch loaded a different video, resetting video state.",
+          })
         );
         return;
       }
@@ -257,6 +260,31 @@ const Player = () => {
     [dispatch, isPlayerReady]
   );
 
+  useEffect(
+    function detectExtensionsMute() {
+      if (isPlayerReady) {
+        const playerEl = playerRef.current;
+        if (!playerEl) return;
+
+        playerEl.setMuted(false);
+        setTimeout(() => {
+          const muted = playerEl.getMuted();
+          if (muted) {
+            dispatch(
+              setError({
+                type: ErrorTypes.ERR_PLUGINS_MUTE_HIJACKED,
+                message:
+                  "Something is hijacking mute mode (you may have activated " +
+                  "auto mute in 7TV/BetterTTV). Either manually unmute the twitch " +
+                  "player or disable the extension auto mute",
+              })
+            );
+          }
+        }, 3e3);
+      }
+    },
+    [dispatch, isPlayerReady]
+  );
   return (
     <div
       className={`rcap-player-wrapper${isFg ? " foreground" : ""}`}

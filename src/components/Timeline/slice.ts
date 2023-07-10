@@ -19,7 +19,10 @@ interface TimelineState {
     min: number;
   };
   status: {
-    error: string;
+    error: {
+      message: string;
+      type: string;
+    };
     isPlayerLoading: boolean;
     isPlayerReady: boolean;
   };
@@ -45,7 +48,10 @@ const initialState: TimelineState = {
     min: 100,
   },
   status: {
-    error: "",
+    error: {
+      message: "",
+      type: "",
+    },
     isPlayerLoading: false,
     isPlayerReady: false,
   },
@@ -100,8 +106,8 @@ const timelineSlice = createSlice({
     setPlaying(state) {
       state.player.isForeground = true;
       state.player.isPaused = false;
-      state.status.error = "";
       state.status.isPlayerLoading = false;
+      timelineSlice.caseReducers.resetError(state);
     },
     setIsTimeFromPause(state, action: PayloadAction<boolean>) {
       state.time.isTimeFromPause = action.payload;
@@ -126,8 +132,18 @@ const timelineSlice = createSlice({
     hidePlayer(state) {
       state.player.isForeground = false;
     },
-    setError(state, action: PayloadAction<string>) {
+    setError(
+      state,
+      action: PayloadAction<{
+        message: string;
+        type: string;
+      }>
+    ) {
       state.status.error = action.payload;
+    },
+    resetError(state) {
+      state.status.error.message = "";
+      state.status.error.type = "";
     },
     setPlayerLoadingAndNotReady(state) {
       state.status.isPlayerLoading = true;
@@ -164,6 +180,7 @@ export const {
   setThresholdAreaNearThreshold,
   setThresholdAreaSeconds,
   setError,
+  resetError,
   setPlayerLoadingAndNotReady,
   setIsPlayerLoading,
   setPlayerReady,

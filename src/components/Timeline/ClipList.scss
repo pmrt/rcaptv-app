@@ -31,6 +31,10 @@ section {
   &.foreground {
     transform: translateX(0);
   }
+  .message {
+    font-style: italic;
+    color: var(--color-grey);
+  }
 }
 
 .clips-list {
@@ -40,9 +44,4 @@ section {
   grid-auto-flow: row;
   justify-content: center;
   gap: 28px;
-}
-
-.message {
-  font-style: italic;
-  color: var(--color-grey);
 }

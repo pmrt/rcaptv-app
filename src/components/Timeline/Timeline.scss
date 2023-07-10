@@ -40,10 +40,35 @@
   }
 
   .error {
+    position: fixed;
+    top: 5vh;
+    right: 5vw;
+    padding: 15px 20px;
+    background-color: var(--color-dark-rubber);
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    opacity: 0.9;
+
+    & > *:not(:last-child) {
+      margin-bottom: 12px;
+    }
+
     .message {
-      background-color: var(--color-dark-rubber);
-      padding: 10px 8px;
+      color: var(--color-white);
+      padding: 2px 0px;
+    }
+
+    .err-error {
       color: var(--color-bright-red);
+    }
+    .err-warn {
+      color: var(--color-bright-yellow);
+    }
+
+    button {
+      margin-top: 6px;
     }
   }
 }
