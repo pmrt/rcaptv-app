@@ -7,9 +7,12 @@ import { duration, prettyDuration } from "./helpers";
 interface TimelineState {
   time: {
     seconds: number;
+    // last time was set because a pause.
+    isTimeFromPause: boolean;
   };
   player: {
     isForeground: boolean;
+    isPaused: boolean;
   };
   thresholdArea: {
     seconds: number;
@@ -31,9 +34,11 @@ interface TimelineState {
 const initialState: TimelineState = {
   time: {
     seconds: 0,
+    isTimeFromPause: false,
   },
   player: {
     isForeground: false,
+    isPaused: true,
   },
   thresholdArea: {
     seconds: 0,
@@ -79,9 +84,27 @@ const timelineSlice = createSlice({
       timelineSlice.caseReducers.setTime(state, action);
       state.player.isForeground = true;
     },
+    setTimeAndHidePlayer(state, action: PayloadAction<number>) {
+      timelineSlice.caseReducers.setTime(state, action);
+      state.player.isForeground = false;
+    },
     setTimeAndLoading(state, action: PayloadAction<number>) {
       timelineSlice.caseReducers.setTime(state, action);
       state.status.isPlayerLoading = true;
+    },
+    setPause(state, action: PayloadAction<number>) {
+      state.player.isPaused = true;
+      state.time.isTimeFromPause = true;
+      timelineSlice.caseReducers.setTimeAndHidePlayer(state, action);
+    },
+    setPlaying(state) {
+      state.player.isForeground = true;
+      state.player.isPaused = false;
+      state.status.error = "";
+      state.status.isPlayerLoading = false;
+    },
+    setIsTimeFromPause(state, action: PayloadAction<boolean>) {
+      state.time.isTimeFromPause = action.payload;
     },
     setVod(state, action: PayloadAction<VOD>) {
       // Note: we substract Xs to the duration to prevent the user from
@@ -117,11 +140,6 @@ const timelineSlice = createSlice({
       state.status.isPlayerReady = true;
       state.status.isPlayerLoading = false;
     },
-    setPlaying(state) {
-      state.player.isForeground = true;
-      state.status.error = "";
-      state.status.isPlayerLoading = false;
-    },
     setThresholdAreaNearThreshold(state, action: PayloadAction<number>) {
       const threshold = action.payload;
       const min =
@@ -140,6 +158,7 @@ export const {
   setTimeAndLoading,
   setInitialTime,
   setTimeAndShowPlayer,
+  setTimeAndHidePlayer,
   showPlayer,
   hidePlayer,
   setThresholdAreaNearThreshold,
@@ -148,9 +167,11 @@ export const {
   setPlayerLoadingAndNotReady,
   setIsPlayerLoading,
   setPlayerReady,
+  setPause,
   setPlaying,
   setVod,
   setClips,
+  setIsTimeFromPause,
 } = timelineSlice.actions;
 
 export const selectTimeSeconds = (state: RootState) =>
@@ -171,6 +192,8 @@ export const selectStatusIsPlayerLoading = (state: RootState) =>
   state.timeline.status.isPlayerLoading;
 export const selectStatusIsPlayerReady = (state: RootState) =>
   state.timeline.status.isPlayerReady;
+export const selectIsTimeFromPause = (state: RootState) =>
+  state.timeline.time.isTimeFromPause;
 export const selectVodsAnchor = (state: RootState) =>
   state.timeline.vods.anchor;
 export const selectAllClips = (state: RootState) => state.timeline.clips.all;

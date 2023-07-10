@@ -9,6 +9,7 @@ import { TWITCH_PLAYER_SCRIPT } from "./constants";
 import { duration } from "./helpers";
 import {
   hidePlayer,
+  selectIsTimeFromPause,
   selectPlayerIsForeground,
   selectStatusIsPlayerReady,
   selectTimeSeconds,
@@ -17,6 +18,8 @@ import {
   setError,
   setInitialTime,
   setIsPlayerLoading,
+  setIsTimeFromPause,
+  setPause,
   setPlayerLoadingAndNotReady,
   setPlayerReady,
   setPlaying,
@@ -24,6 +27,8 @@ import {
   setTimeAndShowPlayer,
   showPlayer,
 } from "./slice";
+
+const UNREACHABLE_TIME = -1;
 
 // hacky, unstable way to check for buffering. Twitch does not provide an
 // official way to check this. Especially, when we seek manually with
@@ -51,7 +56,7 @@ function waitForBuffering(el: TwitchPlayer.Player | null, cb: () => void) {
     } else if (wantStates[el._player._playerState.playback]) {
       h();
     }
-  }, 5);
+  }, 1);
 }
 
 const Player = () => {
@@ -64,6 +69,7 @@ const Player = () => {
   const timeSec = useAppSelector(selectTimeSeconds);
   const isFg = useAppSelector(selectPlayerIsForeground);
   const initialOffset = useAppSelector(selectTopOffset);
+  const isTimeFromPause = useAppSelector(selectIsTimeFromPause);
 
   const isScriptReady = useExternalScript(TWITCH_PLAYER_SCRIPT);
 
@@ -100,7 +106,7 @@ const Player = () => {
       playerRef.current?.setVolume(1);
     };
     const onPause = () => {
-      dispatch(hidePlayer());
+      dispatch(setPause(playerRef.current?.getCurrentTime() || 0));
     };
     const onPlay = () => {
       const p = playerRef.current;
@@ -168,17 +174,40 @@ const Player = () => {
     [isFg, playerRef, isPlayerReady]
   );
 
+  const ignoreTime = useRef(UNREACHABLE_TIME);
   useEffect(
     function handleTimeMarkChange() {
+      if (ignoreTime.current === timeSec) {
+        return;
+      }
+
       if (playerRef.current && isPlayerReady) {
+        if (isTimeFromPause) {
+          // if the time change is because a pause, we don't need a seek
+          // because we're already where we want in the player.
+          //
+          // Since the moment we receive a time from pause we won't let our
+          // hook to fire a new seek until the timeSec changes, ignoring
+          // timeSecs from last pause.
+          //
+          // This prevents some bad behaviour, e.g.: when user uses the player
+          // to seek, twitch would send first a pause and then a seek with the
+          // right position seeked. If we pause and seek in this hook before
+          // receiving the right seek, the second seek would cancel out.
+          ignoreTime.current = timeSec;
+          dispatch(setIsTimeFromPause(false));
+          return;
+        }
+
         playerRef.current.seek(timeSec);
         dispatch(setIsPlayerLoading(true));
         waitForBuffering(playerRef.current, () => {
           dispatch(setIsPlayerLoading(false));
         });
+        ignoreTime.current = UNREACHABLE_TIME;
       }
     },
-    [timeSec, dispatch, playerRef, isPlayerReady]
+    [timeSec, dispatch, playerRef, isPlayerReady, isTimeFromPause]
   );
 
   useEffect(
