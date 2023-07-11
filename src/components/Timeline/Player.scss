@@ -5,10 +5,14 @@
   z-index: 0;
   top: var(--navbar-height);
   height: calc(100vh - var(--navbar-height));
-  opacity: 0.05;
+  opacity: 0;
   filter: blur(6px) grayscale(1);
   transition: opacity 300ms ease-in-out, filter 200ms ease-in-out;
   outline: none;
+
+  &.ready {
+    opacity: 0.05;
+  }
 
   & iframe {
     pointer-events: none;

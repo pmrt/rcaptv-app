@@ -285,9 +285,12 @@ const Player = () => {
     },
     [dispatch, isPlayerReady]
   );
+
   return (
     <div
-      className={`rcap-player-wrapper${isFg ? " foreground" : ""}`}
+      className={`rcap-player-wrapper${isFg ? " foreground" : ""}${
+        isPlayerReady ? " ready" : ""
+      }`}
       tabIndex={-1}
     >
       <div id={playerElementID}></div>

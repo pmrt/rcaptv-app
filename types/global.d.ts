@@ -78,5 +78,6 @@ declare global {
     Twitch: Twitch | undefined;
     seventv: unknown | undefined;
     _betterttv: unknown | undefined;
+    _rcap_player: TwitchPlayer.Player | undefined;
   }
 }

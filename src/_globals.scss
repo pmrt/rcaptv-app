@@ -14,6 +14,9 @@ $page-padding: 30px;
 $clip-width: 346px;
 $clip-height: 200px;
 
+$easeOutQuad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$easeInQuad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+
 @function color($color) {
   @return map-get($colors, $color);
 }

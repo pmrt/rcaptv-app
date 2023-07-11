@@ -1,5 +1,21 @@
 @use "sass:math";
 
+.timeline-container {
+  height: calc(100vh - var(--navbar-height));
+  overflow: hidden;
+}
+
+.timeline {
+  --translate: 100vh;
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--navbar-height));
+  padding: $page-padding;
+  z-index: 1;
+  transform: translateY(var(--translate));
+  transition: transform 2s $easeOutQuad;
+}
+
 .timeline-header {
   position: relative;
   z-index: 1;
@@ -71,12 +87,4 @@
       margin-top: 6px;
     }
   }
-}
-
-main {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - var(--navbar-height));
-  padding: $page-padding;
-  z-index: 1;
 }

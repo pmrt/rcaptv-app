@@ -156,6 +156,12 @@ $colors: (
   --navbar-height: 5vh;
 }
 
+*::selection {
+  background-color: var(--color-light-purple);
+  background-color: rgba(var(--rgb-light-purple), 0.6);
+  color: var(--dark-rubber);
+}
+
 html {
   font-size: 16px;
 }
@@ -206,6 +212,11 @@ button {
     border-left: none;
     // margin-left: 4px;
   }
+}
+
+input {
+  outline: none;
+  border: none;
 }
 
 body::-webkit-scrollbar {

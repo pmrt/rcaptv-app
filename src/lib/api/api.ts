@@ -14,10 +14,17 @@ export const getURL = (endpoint: string, params?: URLParams) => {
   return url.toString();
 };
 
-export const fetchOrFail = async (url: string) => {
+type FetchOrFailParams = {
+  signal?: AbortSignal;
+  url: string;
+};
+
+export const fetchOrFail = async (params: FetchOrFailParams) => {
   let resp;
   try {
-    resp = await fetch(url);
+    resp = await fetch(params.url, {
+      signal: params.signal,
+    });
   } catch (e) {
     throw new ErrFetch(
       "Error while fetching, network failure or incorrect request"

@@ -11,10 +11,12 @@ import {
 import PreTimeline from "./components/Timeline/PreTimeline";
 import { timelineLoader } from "./components/Timeline/loader";
 
+import Searchbar from "./components/Searchbar";
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Layout />} errorElement={<ErrorPage />}>
-      <Route index element={<h1>Nothing to see here.</h1>} />
+      <Route index element={<Searchbar />} />
       <Route path="/about" element={<h1>About me</h1>} />
       <Route
         path="/:handle"

@@ -1,3 +1,5 @@
+import { type VOD, type VODResponse } from "@/lib/api/vods";
+
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
 export const invlerp = (x: number, y: number, a: number) =>
   clamp((a - x) / (y - x));
@@ -13,3 +15,14 @@ export const range = (
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export const noop = (): void => {};
+
+export const wrapVodWithVODResponse = (vod: VOD): VODResponse => ({
+  data: {
+    vods: [vod],
+  },
+  errors: [],
+});
+
+export function isRecentSearches(obj: unknown): obj is string[] {
+  return Array.isArray(obj);
+}

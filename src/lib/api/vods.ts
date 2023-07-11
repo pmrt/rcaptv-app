@@ -1,4 +1,5 @@
 import { fetchOrFail, getURL } from "@/lib/api/api";
+import { QueryFunction, QueryFunctionContext } from "@tanstack/react-query";
 
 export type VOD = {
   id: string;
@@ -18,13 +19,53 @@ export type VODResponse = {
   };
   errors: string[];
 };
-export const lastVodByStreamer = async (
-  username: string
-): Promise<VODResponse> =>
-  await (await fetchOrFail(getURL("/vods", { username }))).json();
 
-export const vodById = async (vid: string): Promise<VODResponse> =>
-  await (await fetchOrFail(getURL("/vods", { vid }))).json();
+export const lastVodByStreamer: QueryFunction<
+  VODResponse,
+  [string, string]
+> = async ({ queryKey, signal }): Promise<VODResponse> =>
+  await (
+    await fetchOrFail({
+      url: getURL("/vods", { username: queryKey[1] }),
+      signal,
+    })
+  ).json();
 
-export const prevVod = async (vid: string): Promise<VODResponse> =>
-  await (await fetchOrFail(getURL("/vods", { after: vid }))).json();
+export const lastVodByStreamerQuery = (username: string) => ({
+  queryKey: ["vod", username] as [string, string],
+  queryFn: lastVodByStreamer,
+  select: (data: VODResponse) => data.data.vods?.[0],
+});
+
+export const vodById: QueryFunction<VODResponse, [string, string]> = async ({
+  queryKey,
+  signal,
+}) =>
+  await (
+    await fetchOrFail({
+      url: getURL("/vods", { vid: queryKey[1] }),
+      signal,
+    })
+  ).json();
+
+export const vodByVidQuery = (vid: string) => ({
+  queryKey: ["vod", vid] as [string, string],
+  queryFn: vodById,
+  select: (data: VODResponse) => data.data.vods?.[0],
+});
+
+export const prevVod: QueryFunction<VODResponse, [string, string]> = async ({
+  queryKey,
+  signal,
+}) =>
+  await (
+    await fetchOrFail({
+      url: getURL("/vods", { after: queryKey[1] }),
+      signal: signal,
+    })
+  ).json();
+
+export const prevVodQuery = (after: string) => ({
+  queryKey: ["vod", after] as [string, string],
+  queryFn: (ctx: QueryFunctionContext<[string, string]>) => prevVod(ctx),
+});

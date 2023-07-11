@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import Player from "./Player";
 import TimelineBar from "./TimelineBar";
@@ -6,7 +6,11 @@ import TimelineBar from "./TimelineBar";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import ClipsList from "./ClipList";
 import "./Timeline.scss";
-import { CLIP_NEAR_THRESHOLD, ErrorTypes } from "./constants";
+import {
+  CLIP_NEAR_THRESHOLD,
+  ErrorTypes,
+  LSKEY_MUTE_HIJACK_ACCEPTED,
+} from "./constants";
 import {
   resetError,
   selectStatusError,
@@ -22,6 +26,8 @@ const Timeline = ({ user }: TimelineProps) => {
   const dispatch = useAppDispatch();
   const vod = useAppSelector(selectVodsAnchor);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(
     function initialThresholdArea() {
       dispatch(setThresholdAreaNearThreshold(CLIP_NEAR_THRESHOLD));
@@ -29,27 +35,41 @@ const Timeline = ({ user }: TimelineProps) => {
     [dispatch, vod?.duration_seconds]
   );
 
+  useEffect(
+    function showTimeline() {
+      if (vod?.id) {
+        containerRef.current?.style.setProperty("--translate", "0");
+      }
+    },
+    [vod?.id]
+  );
+
   if (!vod) {
-    return <p>Invalid VOD</p>;
+    return null;
+    // return <p>Invalid VOD</p>;
   }
 
   return (
     <>
       <main>
-        <header className="timeline-header">
-          <div className="timeline-info">
-            <div className="title">
-              <h1>Timeline</h1>
-              <span className="divider" />
-              {user ? <h2 className="user">{user}</h2> : null}
-            </div>
-            <h3 className="vod-title">{vod.title}</h3>
+        <div className="timeline-container">
+          <div className="timeline" ref={containerRef}>
+            <header className="timeline-header">
+              <div className="timeline-info">
+                <div className="title">
+                  <h1>Timeline</h1>
+                  <span className="divider" />
+                  {user ? <h2 className="user">{user}</h2> : null}
+                </div>
+                <h3 className="vod-title">{vod.title}</h3>
+              </div>
+              <TimelineState />
+            </header>
+            <Player />
+            <ClipsList />
+            <TimelineBar />
           </div>
-          <TimelineState />
-        </header>
-        <Player />
-        <ClipsList />
-        <TimelineBar />
+        </div>
       </main>
     </>
   );
@@ -81,11 +101,10 @@ const PluginsMuteHijackingsError = ({ error }: ErrorProps) => {
 
   const accept = useCallback(() => {
     dispatch(resetError());
-    localStorage.setItem(lsKey, "1");
+    localStorage.setItem(LSKEY_MUTE_HIJACK_ACCEPTED, "1");
   }, [dispatch]);
 
-  const lsKey = "err_mute_hijack_accepted";
-  const accepted = localStorage.getItem(lsKey) === "1";
+  const accepted = localStorage.getItem(LSKEY_MUTE_HIJACK_ACCEPTED) === "1";
   if (accepted) {
     return null;
   }
