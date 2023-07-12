@@ -47,6 +47,7 @@ const Searchbar = () => {
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
 
   const updateSearchQuery = useCallback(() => {
     if (inputRef.current?.value !== undefined) {
@@ -72,6 +73,7 @@ const Searchbar = () => {
             if (searchQuery !== "") {
               // start prefetching, we will asynchronously start the transition
               prefetchResults(client, searchQuery);
+              footerRef.current?.classList.add("hide");
               animateLoading(containerRef.current, 3, () => {
                 navigate(`/@${searchQuery}`);
               });
@@ -128,6 +130,10 @@ const Searchbar = () => {
     }
   }, []);
 
+  useEffect(function showFooter() {
+    footerRef.current?.classList.remove("hide");
+  }, []);
+
   return (
     <>
       <main>
@@ -178,7 +184,7 @@ const Searchbar = () => {
           </div>
         </section>
       </main>
-      <footer>
+      <footer ref={footerRef}>
         <div className="footer-notice">
           <p>
             Rcap.tv is not affiliated with Twitch or Amazon. All Trademarks and
