@@ -1,4 +1,9 @@
 .navbar {
-  display: none;
   height: var(--navbar-height);
+  opacity: 0;
+  position: fixed;
+
+  &.active {
+    position: relative;
+  }
 }

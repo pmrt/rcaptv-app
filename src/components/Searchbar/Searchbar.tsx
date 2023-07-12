@@ -1,4 +1,6 @@
+import es from "@/assets/es.png";
 import searchIcon from "@/assets/icons/search.svg";
+import love from "@/assets/love.png";
 import { clipsByVodQuery } from "@/lib/api/clips";
 import { lastVodByStreamerQuery, vodByVidQuery } from "@/lib/api/vods";
 import { isRecentSearches, wrapVodWithVODResponse } from "@/lib/utils";
@@ -78,19 +80,25 @@ const Searchbar = () => {
           }
           case "1": {
             if (!e.ctrlKey) return;
-            setSearchQuery(recent[0] || searchQuery);
+            setSearchQuery(recent?.[0] || searchQuery);
             selectAfterPaint();
             break;
           }
           case "2": {
             if (!e.ctrlKey) return;
-            setSearchQuery(recent[1] || searchQuery);
+            setSearchQuery(recent?.[1] || searchQuery);
             selectAfterPaint();
             break;
           }
           case "3": {
             if (!e.ctrlKey) return;
-            setSearchQuery(recent[2] || searchQuery);
+            setSearchQuery(recent?.[2] || searchQuery);
+            selectAfterPaint();
+            break;
+          }
+          case "/": {
+            e.preventDefault();
+            inputRef.current?.focus();
             selectAfterPaint();
             break;
           }
@@ -109,41 +117,85 @@ const Searchbar = () => {
       if (!isRecentSearches(parsed)) {
         return;
       }
-      setRecent(parsed);
+      setRecent(parsed.reverse());
+    }
+  }, []);
+
+  useEffect(function hideNavbar() {
+    const nav = document.querySelector(".navbar") as HTMLElement | null;
+    if (nav) {
+      nav.classList.remove("active");
     }
   }, []);
 
   return (
-    <main>
-      <section className="search-container">
-        <div className="search" ref={containerRef}>
-          <div className="searchbox-wrapper">
-            <div className="searchbox">
-              <img className="search-icon" src={searchIcon} alt="search icon" />
-              <input
-                type="text"
-                tabIndex={0}
-                autoFocus={true}
-                spellCheck={false}
-                placeholder="Search for a channel..."
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                onChange={updateSearchQuery}
-                onFocus={selectInputValue}
-                value={searchQuery}
-                ref={inputRef}
-              />
+    <>
+      <main>
+        <section className="search-container">
+          <div className="search" ref={containerRef}>
+            <div className="searchbox-wrapper">
+              <div className="searchbox">
+                <img
+                  className="search-icon"
+                  src={searchIcon}
+                  alt="search icon"
+                />
+                <input
+                  type="text"
+                  tabIndex={0}
+                  autoFocus={true}
+                  spellCheck={false}
+                  placeholder="Search for a channel..."
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  onChange={updateSearchQuery}
+                  onFocus={selectInputValue}
+                  value={searchQuery}
+                  ref={inputRef}
+                />
+                <span className="key-hint">[ ENTER ]</span>
+              </div>
+
+              {recent.length > 0 && (
+                <div className="recent">
+                  <div className="recent-title">
+                    <small>Recent</small>
+                    <span className="divider">|</span>
+                    <span className="key-hint">CTRL + #</span>
+                  </div>
+                  <ul className="recent-list">
+                    {recent.map((r, i) => (
+                      <li key={r} onClick={() => setSearchQuery(r)}>
+                        <span>{i + 1}</span>
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-            <ul>
-              {recent.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
           </div>
+        </section>
+      </main>
+      <footer>
+        <div className="footer-notice">
+          <p>
+            Rcap.tv is not affiliated with Twitch or Amazon. All Trademarks and
+            logos are the property of their respective owners.
+          </p>
         </div>
-      </section>
-    </main>
+        <div className="footer-about">
+          <span className="made-0">•</span>
+          <p className="made-1">Made</p>
+          <p className="made-2">with</p>
+          <img className="love" src={love} alt="peepo love" />
+          <p className="made-3">in</p>
+          <img className="flag made-4" src={es} alt="spain flag" />
+          <span className="made-5">•</span>
+        </div>
+      </footer>
+    </>
   );
 };
 

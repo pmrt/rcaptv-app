@@ -37,9 +37,12 @@ const Timeline = ({ user }: TimelineProps) => {
 
   useEffect(
     function showTimeline() {
-      if (vod?.id) {
-        containerRef.current?.style.setProperty("--translate", "0");
+      if (!vod?.id) return;
+      const nav = document.querySelector(".navbar") as HTMLElement | null;
+      if (nav) {
+        nav.classList.add("active");
       }
+      containerRef.current?.style.setProperty("--translate", "0");
     },
     [vod?.id]
   );
