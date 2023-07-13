@@ -234,11 +234,13 @@ export const selectContextualClips = createSelector(
   selectTimeSeconds,
   selectThresholdAreaSeconds,
   (clips, time, thresholdAreaSec) =>
-    clips.filter(
-      (c) =>
-        c.vod_offset >= time - thresholdAreaSec &&
-        c.vod_offset <= time + thresholdAreaSec
-    )
+    clips
+      .filter(
+        (c) =>
+          c.vod_offset >= time - thresholdAreaSec &&
+          c.vod_offset <= time + thresholdAreaSec
+      )
+      .sort((a, b) => a.vod_offset - b.vod_offset)
 );
 
 export default timelineSlice.reducer;
