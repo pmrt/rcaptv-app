@@ -34,7 +34,7 @@ export const clipsByVod: QueryFunction<ClipResponse, [string, VOD]> = async ({
   const vod = queryKey[1];
   return await (
     await fetchOrFail({
-      url: getURL("/clips", {
+      url: getURL("/hx/clips", {
         bid: vod.user_id,
         started_at: vod.created_at,
         ended_at: addTime(

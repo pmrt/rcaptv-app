@@ -32,6 +32,11 @@ type RcapResponse = {
   data: unknown;
   errors: string[];
 };
+
+function isRcapResponse(resp: any): resp is RcapResponse {
+  return !!resp.data && Array.isArray(resp.errors)
+}
+
 export class ErrFetch extends RcapError {
   name = "ErrFetch";
   status = 0;
@@ -42,9 +47,25 @@ export class ErrFetch extends RcapError {
   async asyncResp(r: Response) {
     this.status = r.status;
     this.statusText = r.statusText;
-    const parsed: RcapResponse = await r.json();
-    if (parsed?.errors?.length > 0) {
+    let parsed: RcapResponse | string;
+    try {
+      if (r.status === 200 || r.status === 400 || r.status === 404) {
+        // 400, 404, 200 return a RcapResponse, other errors like 401 are handled different
+        parsed = await r.json();
+      } else {
+        parsed = await r.text();
+      }
+    } catch (e: any) {
+      if (e instanceof SyntaxError) {
+        parsed = "unable to parse response"
+        console.error(e)
+      }
+      parsed = "unknown client error while reading response"
+    }
+    if (isRcapResponse(parsed) && parsed?.errors?.length > 0) {
       this.errors = parsed.errors;
+    } else if (typeof parsed === "string") {
+      this.errors = [parsed]
     }
     return this;
   }
