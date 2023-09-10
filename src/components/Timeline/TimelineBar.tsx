@@ -290,9 +290,8 @@ const TimelineBar = () => {
 
   return (
     <div
-      className={`timeline-wrapper with-background ${
-        isPlayerFg ? "" : "foreground"
-      }`}
+      className={`timeline-wrapper with-background ${isPlayerFg ? "" : "foreground"
+        }`}
     >
       <aside className="timeline-bar">
         <div className="timeline-box">
