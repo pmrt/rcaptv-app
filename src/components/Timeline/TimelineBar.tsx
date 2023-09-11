@@ -74,6 +74,8 @@ const TimelineBar = () => {
     [clips]
   )();
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const outerRef = useRef<HTMLDivElement>(null);
   const [parentDims, setParentDims] = useState({
     width: 0,
@@ -147,18 +149,36 @@ const TimelineBar = () => {
   );
 
   useEffect(
-    function update5MinSize() {
-      // update the current size corresponding to 5 minutes
-      const box = document.querySelector(".timeline-box") as HTMLElement;
-      if (!box) return;
+    function updateTimemarkCanvas() {
+      const c = canvasRef.current
+      if (!c) return;
+      const ctx = c.getContext("2d")
+      if (!ctx) return;
+      const rect = c.getBoundingClientRect()
+      const [w, h] = [rect.width, rect.height]
 
-      box.style.setProperty(
-        "--five-min-px-size",
-        `${toWidthPx(5 * 60).toString()}px`
-      );
+      const scale = window.devicePixelRatio
+      c.width = w * scale
+      c.height = h * scale
+      const wbar = 2;
+      const wQuarterBar = 1;
+      const hbar = h - (50 * h / 100)
+      const hQuarterBar = hbar / 2
+      const min5 = range(0, vod?.duration_seconds ?? 0, 0, w + wbar * -1, 5 * 60)
+      const min5q = min5 / 4
+      ctx.scale(scale, scale)
+
+      ctx.clearRect(0, 0, w, h)
+      ctx.fillStyle = "#7d7d7d"
+      for (let x = min5; x < w; x += min5) {
+        ctx.fillRect(x, h - hbar, wbar, hbar)
+      }
+      for (let x = min5q; x <= w - min5q; x += min5q) {
+        ctx.fillRect(x, h - hQuarterBar, wQuarterBar, hQuarterBar)
+      }
     },
-    [toWidthPx]
-  );
+    [vod?.duration_seconds]
+  )
 
   useEffect(
     function cursorHandlers() {
@@ -316,6 +336,9 @@ const TimelineBar = () => {
                 }}
               ></article>
             ))}
+          </div>
+          <div className="timeline-marks">
+            <canvas ref={canvasRef} width="2000" height="1000"></canvas>
           </div>
         </div>
       </aside>
