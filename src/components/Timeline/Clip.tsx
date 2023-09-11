@@ -1,5 +1,7 @@
 import { useAppDispatch } from "@/lib/hooks";
 import { useCallback, useEffect, useRef, type MouseEventHandler } from "react";
+
+import eyeIcon from "@/assets/icons/eye.svg";
 import "./Clip.scss";
 import { prettyDuration } from "./helpers";
 import { setTimeAndShowPlayer } from "./slice";
@@ -10,6 +12,7 @@ type ClipProps = {
   vod_offset: number;
   thumbnailUrl: string;
   creator: string;
+  view_count: number;
 };
 const Clip = ({
   title,
@@ -17,6 +20,7 @@ const Clip = ({
   thumbnailUrl,
   creator,
   vod_offset,
+  view_count,
 }: ClipProps) => {
   const dispatch = useAppDispatch();
   const jumpToOffset = useCallback<MouseEventHandler<HTMLButtonElement>>(
@@ -61,8 +65,16 @@ const Clip = ({
     `,
       }}
     >
-      <h3 title={title}>{title}</h3>
-      <small className="clip-creator">by {creator}</small>
+      <div className="clip-info">
+        <div className="clip-title">
+          <h3 title={title}>{title}</h3>
+          <small className="clip-creator">by {creator}</small>
+        </div>
+        <div className="clip-views">
+          <img className="eye-icon" src={eyeIcon} alt="eye icon"/>
+          <small>{view_count}</small>
+        </div>
+      </div>
 
       <div className="clip-action-bar">
         <small className="clip-duration">

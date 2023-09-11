@@ -40,6 +40,29 @@ $padding: 12px;
   .clip-creator {
     color: var(--color-grey);
   }
+
+  .clip-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .clip-views {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+
+    small {
+      font-size: .9rem;
+      color: var(--color-dark-grey);
+    }
+
+    img.eye-icon {
+      opacity: .5;
+      width: 16px;
+      margin-right: 8px;
+    }
+  }
 }
 
 .clip-action-bar {

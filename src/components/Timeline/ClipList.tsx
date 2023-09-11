@@ -38,6 +38,7 @@ const ClipsList = () => {
                 vod_offset={c.vod_offset}
                 thumbnailUrl={c.thumbnail_url}
                 creator={c.creator_name}
+                view_count={c.view_count}
               />
             ))}
           </div>
